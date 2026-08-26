@@ -1,0 +1,37 @@
+Project Tree Structure - Generated: 2026-08-26 04:23:10.443225
+==================================================
+├── .github
+│   └── workflows
+│       ├── generate-and-export.yml
+│       │   └── size: 810 bytes
+│       └── update_tree.yml
+│           └── size: 1070 bytes
+├── docs
+│   └── tree
+├── scenes
+│   ├── editor.tscn
+│   │   └── size: 2216 bytes
+│   ├── main_menu.tscn
+│   │   └── size: 1782 bytes
+│   └── visual_scripting_editor.tscn
+│       └── size: 1004 bytes
+├── scripts
+│   ├── autoload
+│   │   ├── global.gd
+│   │   │   └── size: 1248 bytes
+│   │   └── locale_manager.gd
+│   │       └── size: 301 bytes
+│   ├── editor
+│   │   ├── editor_controller.gd
+│   │   │   └── size: 2356 bytes
+│   │   └── main_menu.gd
+│   │       └── size: 1559 bytes
+│   └── visual_script
+│       └── visual_graph_editor.gd
+│           └── size: 1712 bytes
+├── README.md
+│   └── size: 46 bytes
+├── generate_godot_engine.py
+│   └── size: 14204 bytes
+└── project.godot
+    └── size: 737 bytes
