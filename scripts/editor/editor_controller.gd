@@ -33,23 +33,20 @@ func _ready() -> void:
 	if btn_load: btn_load.pressed.connect(_on_load_project)
 	if btn_apply_props: btn_apply_props.pressed.connect(_on_apply_properties)
 	
-	# اطمینان از عملکرد صحیح تاچ و موس روی پنل‌ها
 	mouse_filter = Control.MOUSE_FILTER_PASS
 
 func _input(event: InputEvent) -> void:
 	if Global.is_playing_preview:
 		return
 		
-	# سیستم جابه‌جایی سه‌بعدی اشیاء با لمس صفحه در ویوپورت
 	if event is InputEventScreenTouch:
 		if event.pressed:
 			selected_node = null
 			for child in scene_root.get_children():
 				if child is Node3D and child.name != "Camera3D" and child.name != "DirectionalLight3D":
-					# ساده‌سازی انتخاب بر اساس فاصله دوبرابری تپ روی صفحه
 					selected_node = child
 					is_dragging = true
-					if input_pos_x and input_pos_y_exists():
+					if input_pos_x:
 						input_pos_x.text = str(snapped(child.global_position.x, 0.1))
 						if input_pos_z: input_pos_z.text = str(snapped(child.global_position.z, 0.1))
 					break
@@ -58,22 +55,17 @@ func _input(event: InputEvent) -> void:
 			
 	elif event is InputEventScreenDrag and is_dragging:
 		if selected_node != null:
-			# حرکت سه‌بعدی روی صفحه افقی X و Z بر اساس درگ انگشت
 			selected_node.global_position.x += event.relative.x * 0.02
 			selected_node.global_position.z += event.relative.y * 0.02
 			if input_pos_x: input_pos_x.text = str(snapped(selected_node.global_position.x, 0.1))
 			if input_pos_z: input_pos_z.text = str(snapped(selected_node.global_position.z, 0.1))
 
-func input_pos_y_exists() -> bool:
-	return true
-
-func _process(delta: float) -> void:
+func _process(_delta: float) -> void:
 	if Global.is_playing_preview:
 		var graph_editor = get_node_or_null("../MainVBox/MainSplit/RightSplit/GraphPanel/VisualGraphEditor")
 		if graph_editor and graph_editor.has_method("interpret_visual_logic"):
-			graph_editor.interpret_visual_logic(delta)
+			graph_editor.interpret_visual_logic(_delta)
 
-# افزودن مکعب سه‌بعدی (3D Box / RigidBody3D)
 func _on_add_3d_box() -> void:
 	var body = RigidBody3D.new()
 	body.name = "Box3D"
@@ -94,7 +86,6 @@ func _on_add_3d_box() -> void:
 	scene_root.add_child(body)
 	print("📦 آبجکت مکعب سه‌بعدی اضافه شد.")
 
-# افزودن کاراکتر سه‌بعدی (CharacterBody3D)
 func _on_add_3d_player() -> void:
 	var player = CharacterBody3D.new()
 	player.name = "Player3D"
@@ -117,7 +108,6 @@ func _on_add_3d_player() -> void:
 	scene_root.add_child(player)
 	print("🏃 کاراکتر سه‌بعدی اضافه شد.")
 
-# افزودن زمین سه‌بعدی (StaticBody3D)
 func _on_add_3d_ground() -> void:
 	var ground = StaticBody3D.new()
 	ground.name = "Ground3D"
