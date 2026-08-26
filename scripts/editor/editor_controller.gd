@@ -4,19 +4,20 @@ extends Control
 @onready var play_mode_btn: Button = $MainVBox/TopBar/PlayModeBtn
 @onready var btn_export_apk: Button = $MainVBox/TopBar/BtnExportAPK
 
-# پنل‌های ادیتور برای مخفی شدن در حالت تست تمام‌صفحه
 @onready var left_panel: PanelContainer = $MainVBox/MainSplit/LeftPanel
 @onready var inspector_panel: PanelContainer = $MainVBox/MainSplit/RightSplit/InspectorPanel
 
-# دکمه‌های ابزار
 @onready var btn_add_box: Button = $MainVBox/MainSplit/LeftPanel/VBox/BtnAddBox
 @onready var btn_add_player: Button = $MainVBox/MainSplit/LeftPanel/VBox/BtnAddPlayer
 @onready var btn_add_ground: Button = $MainVBox/MainSplit/LeftPanel/VBox/BtnAddGround
 @onready var btn_add_touch_btn: Button = $MainVBox/MainSplit/LeftPanel/VBox/BtnAddTouchBtn
 @onready var btn_save: Button = $MainVBox/MainSplit/LeftPanel/VBox/BtnSave
 
+# فیلدهای پیشرفته اینسپکتور (موقعیت، سایز و رنگ)
 @onready var input_pos_x: LineEdit = $MainVBox/MainSplit/RightSplit/InspectorPanel/VBox/InputPosX
 @onready var input_pos_y: LineEdit = $MainVBox/MainSplit/RightSplit/InspectorPanel/VBox/InputPosY
+@onready var input_size_w: LineEdit = $MainVBox/MainSplit/RightSplit/InspectorPanel/VBox/InputSizeW
+@onready var input_size_h: LineEdit = $MainVBox/MainSplit/RightSplit/InspectorPanel/VBox/InputSizeH
 @onready var btn_apply_props: Button = $MainVBox/MainSplit/RightSplit/InspectorPanel/VBox/BtnApplyProps
 
 var selected_node: Node = null
@@ -55,7 +56,8 @@ func _input(event: InputEvent) -> void:
 					is_dragging = true
 					drag_offset = child_pos - event.position
 					
-					if input_pos_x and input_pos_y and child is Node2D:
+					# به‌روزرسانی فیلدهای اینسپکتور بر اساس شیء انتخاب شده
+					if child is Node2D and input_pos_x and input_pos_y:
 						input_pos_x.text = str(int(child.global_position.x))
 						input_pos_y.text = str(int(child.global_position.y))
 					break
@@ -73,12 +75,12 @@ func _input(event: InputEvent) -> void:
 
 func _process(delta: float) -> void:
 	if Global.is_playing_preview:
-		# اجرای مفسر ویژوال اسکریپت در زمان بازی
+		# اجرای مفسر ویژوال اسکریپت برای پردازش منطق بازی
 		var graph_editor = get_node_or_null("../MainVBox/MainSplit/RightSplit/GraphPanel/VisualGraphEditor")
 		if graph_editor and graph_editor.has_method("interpret_visual_logic"):
 			graph_editor.interpret_visual_logic(delta)
 
-		# کنترل فیزیک کاراکتر
+		# کنترل فیزیک کاراکتر با دکمه‌های لمسی
 		for child in scene_root.get_children():
 			if child.name == "PlayerCharacter" and child is CharacterBody2D:
 				child.velocity.x = touch_input_dir * 260.0
@@ -95,7 +97,6 @@ func _process(delta: float) -> void:
 func _on_toggle_play_mode() -> void:
 	Global.is_playing_preview = not Global.is_playing_preview
 	
-	# حالت تست تمام‌صفحه (مخفی کردن پنل‌های ادیتور در هنگام پلی)
 	if Global.is_playing_preview:
 		play_mode_btn.text = " توقف بازی (Stop) "
 		play_mode_btn.modulate = Color(1, 0.4, 0.4)
@@ -114,13 +115,13 @@ func _on_toggle_play_mode() -> void:
 func _on_export_apk_clicked() -> void:
 	if Global.exporter and Global.exporter.has_method("build_android_apk"):
 		Global.exporter.build_android_apk()
-		print("فایل خروجی APK درخواست شد.")
 
 func _on_apply_properties() -> void:
 	if selected_node != null and selected_node is Node2D:
 		var new_x = input_pos_x.text.to_float()
 		var new_y = input_pos_y.text.to_float()
 		selected_node.global_position = Vector2(new_x, new_y)
+		print("مشخصات آبجکت از طریق اینسپکتور اعمال شد.")
 
 func _on_add_box() -> void:
 	var body = RigidBody2D.new()
@@ -129,6 +130,7 @@ func _on_add_box() -> void:
 	shape.size = Vector2(64, 64)
 	col.shape = shape
 	var visual = ColorRect.new()
+	visual.name = "Visual"
 	visual.size = Vector2(64, 64)
 	visual.position = Vector2(-32, -32)
 	visual.color = Color(0.2, 0.6, 0.9)
@@ -147,6 +149,7 @@ func _on_add_player() -> void:
 	shape.height = 48.0
 	col.shape = shape
 	var visual = ColorRect.new()
+	visual.name = "Visual"
 	visual.size = Vector2(32, 48)
 	visual.position = Vector2(-16, -24)
 	visual.color = Color(0.9, 0.3, 0.3)
@@ -163,6 +166,7 @@ func _on_add_ground() -> void:
 	shape.size = Vector2(400, 48)
 	col.shape = shape
 	var visual = ColorRect.new()
+	visual.name = "Visual"
 	visual.size = Vector2(400, 48)
 	visual.position = Vector2(-200, -24)
 	visual.color = Color(0.3, 0.8, 0.3)

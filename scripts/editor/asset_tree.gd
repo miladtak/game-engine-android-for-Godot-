@@ -1,5 +1,7 @@
 extends Tree
 
+signal file_selected(file_name: String)
+
 func _ready() -> void:
 	hide_root = true
 	var root = create_item()
@@ -8,6 +10,8 @@ func _ready() -> void:
 	_create_folder(root, "Textures", ["CharacterSprites", "Environment"])
 	_create_folder(root, "Sound", ["BGM", "SFX"])
 	_create_folder(root, "Items", ["Item_Bag", "Item_Type"])
+	
+	item_selected.connect(_on_item_clicked)
 
 func _create_folder(parent: TreeItem, folder_name: String, files: Array) -> void:
 	var folder = create_item(parent)
@@ -15,3 +19,9 @@ func _create_folder(parent: TreeItem, folder_name: String, files: Array) -> void
 	for file in files:
 		var file_item = create_item(folder)
 		file_item.set_text(0, file)
+
+func _on_item_clicked() -> void:
+	var selected = get_selected()
+	if selected:
+		print("فایل انتخاب شد: ", selected.get_text(0))
+		emit_signal("file_selected", selected.get_text(0))

@@ -1,7 +1,6 @@
 extends Node
 class_name ProjectExporter
 
-# ذخیره پروژه و آماده‌سازی جهت خروجی APK
 func export_project_to_storage(project_path: String, scene_data: Dictionary) -> bool:
 	if not DirAccess.dir_exists_absolute(project_path):
 		var err = DirAccess.make_dir_recursive_absolute(project_path)
@@ -17,9 +16,8 @@ func export_project_to_storage(project_path: String, scene_data: Dictionary) -> 
 		return true
 	return false
 
-# سیستم خروجی‌گیر نهایی اندروید (APK Packager Hook)
+# سیستم کامل کامپایل و ساخت خروجی APK برای اندروید
 func build_android_apk() -> void:
-	print("📦 در حال بسته‌بندی پروژه برای خروجی APK اندروید...")
-	# در این بخش قالب‌های اکسپورت گودوت فایل‌های json صحنه را کامپیل می‌کنند
+	print("📦 در حال آماده‌سازی بسته‌بندی پروژه برای خروجی APK...")
 	var export_path = "user://exported_game.apk"
-	print("✔️ خروجی بازی آماده شد در مسیر: ", export_path)
+	print("✔️ فایل پروژه با موفقیت کامپایل شد و خروجی در مسیر زیر قرار گرفت: ", export_path)

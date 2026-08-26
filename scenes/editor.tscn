@@ -60,6 +60,7 @@ layout_mode = 2
 [node name="AssetTree" type="Tree" parent="MainVBox/MainSplit/LeftPanel/VBox"]
 layout_mode = 2
 size_flags_vertical = 3
+script = ExtResource("2_tree")
 
 [node name="HSeparator" type="HSeparator" parent="MainVBox/MainSplit/LeftPanel/VBox"]
 layout_mode = 2
@@ -132,6 +133,22 @@ text = "موقعیت عمودی (Y):"
 [node name="InputPosY" type="LineEdit" parent="MainVBox/MainSplit/RightSplit/InspectorPanel/VBox"]
 layout_mode = 2
 text = "0"
+
+[node name="LblSizeW" type="Label" parent="MainVBox/MainSplit/RightSplit/InspectorPanel/VBox"]
+layout_mode = 2
+text = "عرض (Width):"
+
+[node name="InputSizeW" type="LineEdit" parent="MainVBox/MainSplit/RightSplit/InspectorPanel/VBox"]
+layout_mode = 2
+text = "64"
+
+[node name="LblSizeH" type="Label" parent="MainVBox/MainSplit/RightSplit/InspectorPanel/VBox"]
+layout_mode = 2
+text = "ارتفاع (Height):"
+
+[node name="InputSizeH" type="LineEdit" parent="MainVBox/MainSplit/RightSplit/InspectorPanel/VBox"]
+layout_mode = 2
+text = "64"
 
 [node name="BtnApplyProps" type="Button" parent="MainVBox/MainSplit/RightSplit/InspectorPanel/VBox"]
 layout_mode = 2
