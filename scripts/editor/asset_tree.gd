@@ -10,7 +10,6 @@ func _ready() -> void:
 	_create_folder(root, "Textures", ["CharacterSprites", "Environment"])
 	_create_folder(root, "Sound", ["BGM", "SFX"])
 	_create_folder(root, "Items", ["Item_Bag", "Item_Type"])
-	
 	item_selected.connect(_on_item_clicked)
 
 func _create_folder(parent: TreeItem, folder_name: String, files: Array) -> void:
@@ -23,5 +22,4 @@ func _create_folder(parent: TreeItem, folder_name: String, files: Array) -> void
 func _on_item_clicked() -> void:
 	var selected = get_selected()
 	if selected:
-		print("فایل انتخاب شد: ", selected.get_text(0))
 		emit_signal("file_selected", selected.get_text(0))

@@ -12,8 +12,8 @@ extends Control
 @onready var btn_add_ground: Button = $MainVBox/MainSplit/LeftPanel/VBox/BtnAddGround
 @onready var btn_add_touch_btn: Button = $MainVBox/MainSplit/LeftPanel/VBox/BtnAddTouchBtn
 @onready var btn_save: Button = $MainVBox/MainSplit/LeftPanel/VBox/BtnSave
+@onready var btn_load: Button = $MainVBox/MainSplit/LeftPanel/VBox/BtnLoad
 
-# فیلدهای پیشرفته اینسپکتور (موقعیت، سایز و رنگ)
 @onready var input_pos_x: LineEdit = $MainVBox/MainSplit/RightSplit/InspectorPanel/VBox/InputPosX
 @onready var input_pos_y: LineEdit = $MainVBox/MainSplit/RightSplit/InspectorPanel/VBox/InputPosY
 @onready var input_size_w: LineEdit = $MainVBox/MainSplit/RightSplit/InspectorPanel/VBox/InputSizeW
@@ -35,6 +35,7 @@ func _ready() -> void:
 	if btn_add_ground: btn_add_ground.pressed.connect(_on_add_ground)
 	if btn_add_touch_btn: btn_add_touch_btn.pressed.connect(_on_add_touch_button)
 	if btn_save: btn_save.pressed.connect(_on_save_project)
+	if btn_load: btn_load.pressed.connect(_on_load_project)
 	if btn_apply_props: btn_apply_props.pressed.connect(_on_apply_properties)
 
 func _input(event: InputEvent) -> void:
@@ -56,7 +57,6 @@ func _input(event: InputEvent) -> void:
 					is_dragging = true
 					drag_offset = child_pos - event.position
 					
-					# به‌روزرسانی فیلدهای اینسپکتور بر اساس شیء انتخاب شده
 					if child is Node2D and input_pos_x and input_pos_y:
 						input_pos_x.text = str(int(child.global_position.x))
 						input_pos_y.text = str(int(child.global_position.y))
@@ -75,28 +75,23 @@ func _input(event: InputEvent) -> void:
 
 func _process(delta: float) -> void:
 	if Global.is_playing_preview:
-		# اجرای مفسر ویژوال اسکریپت برای پردازش منطق بازی
 		var graph_editor = get_node_or_null("../MainVBox/MainSplit/RightSplit/GraphPanel/VisualGraphEditor")
 		if graph_editor and graph_editor.has_method("interpret_visual_logic"):
 			graph_editor.interpret_visual_logic(delta)
 
-		# کنترل فیزیک کاراکتر با دکمه‌های لمسی
 		for child in scene_root.get_children():
 			if child.name == "PlayerCharacter" and child is CharacterBody2D:
 				child.velocity.x = touch_input_dir * 260.0
-				
 				if not child.is_on_floor():
 					child.velocity.y += 980.0 * delta
 				else:
 					if touch_jump_triggered:
 						child.velocity.y = -480.0
 						touch_jump_triggered = false
-				
 				child.move_and_slide()
 
 func _on_toggle_play_mode() -> void:
 	Global.is_playing_preview = not Global.is_playing_preview
-	
 	if Global.is_playing_preview:
 		play_mode_btn.text = " توقف بازی (Stop) "
 		play_mode_btn.modulate = Color(1, 0.4, 0.4)
@@ -118,13 +113,12 @@ func _on_export_apk_clicked() -> void:
 
 func _on_apply_properties() -> void:
 	if selected_node != null and selected_node is Node2D:
-		var new_x = input_pos_x.text.to_float()
-		var new_y = input_pos_y.text.to_float()
-		selected_node.global_position = Vector2(new_x, new_y)
-		print("مشخصات آبجکت از طریق اینسپکتور اعمال شد.")
+		selected_node.global_position = Vector2(input_pos_x.text.to_float(), input_pos_y.text.to_float())
+		print("تنظیمات آبجکت اعمال شد.")
 
 func _on_add_box() -> void:
 	var body = RigidBody2D.new()
+	body.name = "BoxObject"
 	var col = CollisionShape2D.new()
 	var shape = RectangleShape2D.new()
 	shape.size = Vector2(64, 64)
@@ -194,5 +188,27 @@ func _on_add_touch_button() -> void:
 	scene_root.add_child(touch_panel)
 
 func _on_save_project() -> void:
-	if Global.save_project():
-		print("پروژه با موفقیت ذخیره شد.")
+	var objects_data: Array = []
+	for child in scene_root.get_children():
+		if child is Node2D:
+			objects_data.append({
+				"name": child.name,
+				"pos_x": child.global_position.x,
+				"pos_y": child.global_position.y
+			})
+	if Global.save_project(objects_data):
+		print("سطح بازی با موفقیت ذخیره شد!")
+
+func _on_load_project() -> void:
+	var loaded_objects = Global.load_project()
+	for child in scene_root.get_children():
+		child.queue_free()
+	
+	for obj_data in loaded_objects:
+		if obj_data["name"].contains("PlayerCharacter"):
+			_on_add_player()
+		elif obj_data["name"].contains("GroundPlatform"):
+			_on_add_ground()
+		else:
+			_on_add_box()
+	print("سطح بازی بارگذاری شد!")

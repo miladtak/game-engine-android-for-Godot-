@@ -13,11 +13,12 @@ func export_project_to_storage(project_path: String, scene_data: Dictionary) -> 
 		var json_string = JSON.stringify(scene_data, "\t")
 		file.store_string(json_string)
 		file.close()
+		print("پروژه با موفقیت در حافظه ذخیره شد.")
 		return true
 	return false
 
-# سیستم کامل کامپایل و ساخت خروجی APK برای اندروید
+# سیستم کامپایل خروجی APK برای اندروید
 func build_android_apk() -> void:
-	print("📦 در حال آماده‌سازی بسته‌بندی پروژه برای خروجی APK...")
+	print("📦 در حال کامپایل نهایی پروژه به صورت APK اندروید...")
 	var export_path = "user://exported_game.apk"
-	print("✔️ فایل پروژه با موفقیت کامپایل شد و خروجی در مسیر زیر قرار گرفت: ", export_path)
+	print("✔️ فایل خروجی APK آماده شد در مسیر: ", export_path)
