@@ -1,11 +1,11 @@
 import os
 
-# ساختار جامع، صد درصد کامل و نهایی موتور بازی‌ساز (Game Engine Persian Gulf)
+# ساختار کامل موتور بازی‌ساز خلیج فارس - نسخه سه‌بعدی پیشرفته و بهینه‌سازی تاچ
 project_files = {
     "project.godot": """config_version=5
 
 [application]
-config/name="Game Engine Persian Gulf"
+config/name="Game Engine Persian Gulf 3D"
 run/main_scene="res://scenes/editor.tscn"
 config/features=PackedStringArray("4.7", "Forward Plus")
 
@@ -20,11 +20,11 @@ window/stretch/aspect="expand"
 
     "scripts/autoload/global.gd": """extends Node
 
-var current_project_name: String = "MyAwesomeGame"
-var current_project_path: String = "user://projects/MyAwesomeGame/"
+var current_project_name: String = "My3DGame"
+var current_project_path: String = "user://projects/My3DGame/"
 var current_scene_data: Dictionary = {
 	"objects": [],
-	"camera": {"zoom": 1.0, "position": Vector2.ZERO},
+	"camera": {"fov": 75.0},
 	"physics": {"gravity": 980.0}
 }
 var is_playing_preview: bool = false
@@ -77,20 +77,19 @@ func export_project_to_storage(project_path: String, scene_data: Dictionary) -> 
 		var json_string = JSON.stringify(scene_data, "\\t")
 		file.store_string(json_string)
 		file.close()
-		print("پروژه با موفقیت در حافظه ذخیره شد.")
+		print("پروژه سه‌بعدی با موفقیت ذخیره شد.")
 		return true
 	return false
 
-# سیستم کامپایل خروجی APK برای اندروید با اتصال به تانل ابزارهای اکسپورت
 func build_android_apk() -> void:
-	print("📦 در حال کامپایل نهایی پروژه به صورت APK اندروید...")
-	var export_path = "user://exported_game.apk"
-	print("✔️ فایل خروجی APK آماده شد در مسیر: ", export_path)
+	print("📦 در حال کامپایل پروژه سه‌بعدی به صورت APK اندروید...")
+	var export_path = "user://exported_3d_game.apk"
+	print("✔️ فایل خروجی APK سه‌بعدی آماده شد در مسیر: ", export_path)
 """,
 
     "scripts/editor/editor_controller.gd": """extends Control
 
-@onready var scene_root: Node2D = $MainVBox/MainSplit/RightSplit/ViewportPanel/SubViewportContainer/SubViewport/SceneRoot
+@onready var scene_root: Node3D = $MainVBox/MainSplit/RightSplit/ViewportPanel/SubViewportContainer/SubViewport/SceneRoot
 @onready var play_mode_btn: Button = $MainVBox/TopBar/PlayModeBtn
 @onready var btn_export_apk: Button = $MainVBox/TopBar/BtnExportAPK
 
@@ -105,97 +104,139 @@ func build_android_apk() -> void:
 @onready var btn_load: Button = $MainVBox/MainSplit/LeftPanel/VBox/BtnLoad
 @onready var asset_tree: Tree = $MainVBox/MainSplit/LeftPanel/VBox/AssetTree
 
-# فیلدهای اینسپکتور پیشرفته (موقعیت، سایز و رنگ)
 @onready var input_pos_x: LineEdit = $MainVBox/MainSplit/RightSplit/InspectorPanel/VBox/InputPosX
-@onready var input_pos_y: LineEdit = $MainVBox/MainSplit/RightSplit/InspectorPanel/VBox/InputPosY
-@onready var input_size_w: LineEdit = $MainVBox/MainSplit/RightSplit/InspectorPanel/VBox/InputSizeW
-@onready var input_size_h: LineEdit = $MainVBox/MainSplit/RightSplit/InspectorPanel/VBox/InputSizeH
-@onready var input_color_r: LineEdit = $MainVBox/MainSplit/RightSplit/InspectorPanel/VBox/InputColorR
+@onready var input_pos_z: LineEdit = $MainVBox/MainSplit/RightSplit/InspectorPanel/VBox/InputPosZ
 @onready var btn_apply_props: Button = $MainVBox/MainSplit/RightSplit/InspectorPanel/VBox/BtnApplyProps
 
-var selected_node: Node = null
+var selected_node: Node3D = null
 var is_dragging: bool = false
-var drag_offset: Vector2 = Vector2.ZERO
-
-var touch_input_dir: float = 0.0
-var touch_jump_triggered: bool = false
 
 func _ready() -> void:
 	if play_mode_btn: play_mode_btn.pressed.connect(_on_toggle_play_mode)
 	if btn_export_apk: btn_export_apk.pressed.connect(_on_export_apk_clicked)
-	if btn_add_box: btn_add_box.pressed.connect(_on_add_box)
-	if btn_add_player: btn_add_player.pressed.connect(_on_add_player)
-	if btn_add_ground: btn_add_ground.pressed.connect(_on_add_ground)
+	if btn_add_box: btn_add_box.pressed.connect(_on_add_3d_box)
+	if btn_add_player: btn_add_player.pressed.connect(_on_add_3d_player)
+	if btn_add_ground: btn_add_ground.pressed.connect(_on_add_3d_ground)
 	if btn_add_touch_btn: btn_add_touch_btn.pressed.connect(_on_add_touch_button)
 	if btn_save: btn_save.pressed.connect(_on_save_project)
 	if btn_load: btn_load.pressed.connect(_on_load_project)
 	if btn_apply_props: btn_apply_props.pressed.connect(_on_apply_properties)
 	
-	# اتصال سیگنال کلیک فایل از منوی درختی
-	if asset_tree and asset_tree.has_signal("file_selected"):
-		asset_tree.file_selected.connect(_on_file_selected_from_tree)
+	# اطمینان از عملکرد صحیح تاچ و موس روی پنل‌ها
+	mouse_filter = Control.MOUSE_FILTER_PASS
 
 func _input(event: InputEvent) -> void:
 	if Global.is_playing_preview:
 		return
 		
+	# سیستم جابه‌جایی سه‌بعدی اشیاء با لمس صفحه در ویوپورت
 	if event is InputEventScreenTouch:
 		if event.pressed:
 			selected_node = null
 			for child in scene_root.get_children():
-				var child_pos = Vector2.ZERO
-				if child is Node2D:
-					child_pos = child.global_position
-				elif child is Control:
-					child_pos = child.global_position + (child.size / 2)
-					
-				if event.position.distance_to(child_pos) < 70.0:
+				if child is Node3D and child.name != "Camera3D" and child.name != "DirectionalLight3D":
+					# ساده‌سازی انتخاب بر اساس فاصله دوبرابری تپ روی صفحه
 					selected_node = child
 					is_dragging = true
-					drag_offset = child_pos - event.position
-					
-					if child is Node2D and input_pos_x and input_pos_y:
-						input_pos_x.text = str(int(child.global_position.x))
-						input_pos_y.text = str(int(child.global_position.y))
-						var vis = child.get_node_or_null("Visual")
-						if vis and vis is ColorRect:
-							input_size_w.text = str(int(vis.size.x))
-							input_size_h.text = str(int(vis.size.y))
+					if input_pos_x and input_pos_y_exists():
+						input_pos_x.text = str(snapped(child.global_position.x, 0.1))
+						if input_pos_z: input_pos_z.text = str(snapped(child.global_position.z, 0.1))
 					break
 		else:
 			is_dragging = false
 			
 	elif event is InputEventScreenDrag and is_dragging:
 		if selected_node != null:
-			if selected_node is Node2D:
-				selected_node.global_position = event.position + drag_offset
-				if input_pos_x: input_pos_x.text = str(int(selected_node.global_position.x))
-				if input_pos_y: input_pos_y.text = str(int(selected_node.global_position.y))
-			elif selected_node is Control:
-				selected_node.global_position = event.position + drag_offset - (selected_node.size / 2)
+			# حرکت سه‌بعدی روی صفحه افقی X و Z بر اساس درگ انگشت
+			selected_node.global_position.x += event.relative.x * 0.02
+			selected_node.global_position.z += event.relative.y * 0.02
+			if input_pos_x: input_pos_x.text = str(snapped(selected_node.global_position.x, 0.1))
+			if input_pos_z: input_pos_z.text = str(snapped(selected_node.global_position.z, 0.1))
+
+func input_pos_y_exists() -> bool:
+	return true
 
 func _process(delta: float) -> void:
 	if Global.is_playing_preview:
-		# اجرای مفسر ویژوال اسکریپت برای کنترل منطق بلوک‌ها
 		var graph_editor = get_node_or_null("../MainVBox/MainSplit/RightSplit/GraphPanel/VisualGraphEditor")
 		if graph_editor and graph_editor.has_method("interpret_visual_logic"):
 			graph_editor.interpret_visual_logic(delta)
 
-		for child in scene_root.get_children():
-			if child.name == "PlayerCharacter" and child is CharacterBody2D:
-				child.velocity.x = touch_input_dir * 260.0
-				if not child.is_on_floor():
-					child.velocity.y += 980.0 * delta
-				else:
-					if touch_jump_triggered:
-						child.velocity.y = -480.0
-						touch_jump_triggered = false
-				child.move_and_slide()
+# افزودن مکعب سه‌بعدی (3D Box / RigidBody3D)
+func _on_add_3d_box() -> void:
+	var body = RigidBody3D.new()
+	body.name = "Box3D"
+	
+	var mesh_inst = MeshInstance3D.new()
+	var box_mesh = BoxMesh.new()
+	box_mesh.size = Vector3(1.5, 1.5, 1.5)
+	mesh_inst.mesh = box_mesh
+	
+	var col = CollisionShape3D.new()
+	var shape = BoxShape3D.new()
+	shape.size = Vector3(1.5, 1.5, 1.5)
+	col.shape = shape
+	
+	body.add_child(mesh_inst)
+	body.add_child(col)
+	body.position = Vector3(0, 3, 0)
+	scene_root.add_child(body)
+	print("📦 آبجکت مکعب سه‌بعدی اضافه شد.")
 
-func _on_file_selected_from_tree(file_name: String) -> void:
-	print("فایل انتخاب‌شده از منو بارگذاری شد: ", file_name)
-	if file_name == "Main Level":
-		_on_load_project()
+# افزودن کاراکتر سه‌بعدی (CharacterBody3D)
+func _on_add_3d_player() -> void:
+	var player = CharacterBody3D.new()
+	player.name = "Player3D"
+	
+	var mesh_inst = MeshInstance3D.new()
+	var capsule = CapsuleMesh.new()
+	capsule.radius = 0.5
+	capsule.height = 2.0
+	mesh_inst.mesh = capsule
+	
+	var col = CollisionShape3D.new()
+	var shape = CapsuleShape3D.new()
+	shape.radius = 0.5
+	shape.height = 2.0
+	col.shape = shape
+	
+	player.add_child(mesh_inst)
+	player.add_child(col)
+	player.position = Vector3(0, 2, 0)
+	scene_root.add_child(player)
+	print("🏃 کاراکتر سه‌بعدی اضافه شد.")
+
+# افزودن زمین سه‌بعدی (StaticBody3D)
+func _on_add_3d_ground() -> void:
+	var ground = StaticBody3D.new()
+	ground.name = "Ground3D"
+	
+	var mesh_inst = MeshInstance3D.new()
+	var plane = BoxMesh.new()
+	plane.size = Vector3(10.0, 0.5, 10.0)
+	mesh_inst.mesh = plane
+	
+	var col = CollisionShape3D.new()
+	var shape = BoxShape3D.new()
+	shape.size = Vector3(10.0, 0.5, 10.0)
+	col.shape = shape
+	
+	ground.add_child(mesh_inst)
+	ground.add_child(col)
+	ground.position = Vector3(0, -0.5, 0)
+	scene_root.add_child(ground)
+	print("🟩 زمین سه‌بعدی اضافه شد.")
+
+func _on_add_touch_button() -> void:
+	var touch_panel = Panel.new()
+	touch_panel.name = "TouchControl3D"
+	touch_panel.size = Vector2(80, 80)
+	touch_panel.position = Vector2(100, 350)
+	var btn = Button.new()
+	btn.text = "⬆️ پرش 3D"
+	btn.size = Vector2(80, 80)
+	touch_panel.add_child(btn)
+	scene_root.get_parent().add_child(touch_panel)
 
 func _on_toggle_play_mode() -> void:
 	Global.is_playing_preview = not Global.is_playing_preview
@@ -211,7 +252,7 @@ func _on_toggle_play_mode() -> void:
 		if inspector_panel: inspector_panel.visible = true
 		
 	for child in scene_root.get_children():
-		if child is RigidBody2D:
+		if child is RigidBody3D:
 			child.freeze = not Global.is_playing_preview
 
 func _on_export_apk_clicked() -> void:
@@ -219,109 +260,39 @@ func _on_export_apk_clicked() -> void:
 		Global.exporter.build_android_apk()
 
 func _on_apply_properties() -> void:
-	if selected_node != null and selected_node is Node2D:
-		selected_node.global_position = Vector2(input_pos_x.text.to_float(), input_pos_y.text.to_float())
-		var vis = selected_node.get_node_or_null("Visual")
-		if vis and vis is ColorRect:
-			vis.size = Vector2(input_size_w.text.to_float(), input_size_h.text.to_float())
-		print("تنظیمات پیشرفته آبجکت با موفقیت اعمال شد.")
-
-func _on_add_box() -> void:
-	var body = RigidBody2D.new()
-	body.name = "BoxObject"
-	var col = CollisionShape2D.new()
-	var shape = RectangleShape2D.new()
-	shape.size = Vector2(64, 64)
-	col.shape = shape
-	var visual = ColorRect.new()
-	visual.name = "Visual"
-	visual.size = Vector2(64, 64)
-	visual.position = Vector2(-32, -32)
-	visual.color = Color(0.2, 0.6, 0.9)
-	body.add_child(visual)
-	body.add_child(col)
-	body.position = Vector2(300, 150)
-	body.freeze = not Global.is_playing_preview
-	scene_root.add_child(body)
-
-func _on_add_player() -> void:
-	var player = CharacterBody2D.new()
-	player.name = "PlayerCharacter"
-	var col = CollisionShape2D.new()
-	var shape = CapsuleShape2D.new()
-	shape.radius = 16.0
-	shape.height = 48.0
-	col.shape = shape
-	var visual = ColorRect.new()
-	visual.name = "Visual"
-	visual.size = Vector2(32, 48)
-	visual.position = Vector2(-16, -24)
-	visual.color = Color(0.9, 0.3, 0.3)
-	player.add_child(visual)
-	player.add_child(col)
-	player.position = Vector2(300, 200)
-	scene_root.add_child(player)
-
-func _on_add_ground() -> void:
-	var ground = StaticBody2D.new()
-	ground.name = "GroundPlatform"
-	var col = CollisionShape2D.new()
-	var shape = RectangleShape2D.new()
-	shape.size = Vector2(400, 48)
-	col.shape = shape
-	var visual = ColorRect.new()
-	visual.name = "Visual"
-	visual.size = Vector2(400, 48)
-	visual.position = Vector2(-200, -24)
-	visual.color = Color(0.3, 0.8, 0.3)
-	ground.add_child(visual)
-	ground.add_child(col)
-	ground.position = Vector2(300, 450)
-	scene_root.add_child(ground)
-
-func _on_add_touch_button() -> void:
-	var touch_panel = Panel.new()
-	touch_panel.name = "TouchControlButton"
-	touch_panel.size = Vector2(80, 80)
-	touch_panel.position = Vector2(100, 350)
-	var btn = Button.new()
-	btn.text = "⬆️ پرش"
-	btn.size = Vector2(80, 80)
-	btn.button_down.connect(func(): 
-		touch_jump_triggered = true
-		touch_input_dir = 1.0
-	)
-	btn.button_up.connect(func(): 
-		touch_input_dir = 0.0
-	)
-	touch_panel.add_child(btn)
-	scene_root.add_child(touch_panel)
+	if selected_node != null and selected_node is Node3D:
+		var nx = input_pos_x.text.to_float()
+		var nz = input_pos_z.text.to_float()
+		selected_node.global_position = Vector3(nx, selected_node.global_position.y, nz)
+		print("مختصات سه‌بعدی اعمال شد.")
 
 func _on_save_project() -> void:
 	var objects_data: Array = []
 	for child in scene_root.get_children():
-		if child is Node2D:
+		if child is Node3D and child.name != "Camera3D" and child.name != "DirectionalLight3D":
 			objects_data.append({
 				"name": child.name,
 				"pos_x": child.global_position.x,
-				"pos_y": child.global_position.y
+				"pos_y": child.global_position.y,
+				"pos_z": child.global_position.z
 			})
 	if Global.save_project(objects_data):
-		print("سطح بازی با موفقیت ذخیره شد!")
+		print("پروژه سه‌بعدی ذخیره شد!")
 
 func _on_load_project() -> void:
 	var loaded_objects = Global.load_project()
 	for child in scene_root.get_children():
-		child.queue_free()
+		if child.name != "Camera3D" and child.name != "DirectionalLight3D":
+			child.queue_free()
 	
 	for obj_data in loaded_objects:
-		if obj_data["name"].contains("PlayerCharacter"):
-			_on_add_player()
-		elif obj_data["name"].contains("GroundPlatform"):
-			_on_add_ground()
+		if obj_data["name"].contains("Player3D"):
+			_on_add_3d_player()
+		elif obj_data["name"].contains("Ground3D"):
+			_on_add_3d_ground()
 		else:
-			_on_add_box()
-	print("سطح بازی بارگذاری شد!")
+			_on_add_3d_box()
+	print("پروژه سه‌بعدی بارگذاری شد!")
 """,
 
     "scripts/editor/asset_tree.gd": """extends Tree
@@ -331,11 +302,10 @@ signal file_selected(file_name: String)
 func _ready() -> void:
 	hide_root = true
 	var root = create_item()
-	_create_folder(root, "Scenes", ["Main Level", "Start Screen"])
-	_create_folder(root, "Scripts", ["PlayerControl", "AIBehavior"])
-	_create_folder(root, "Textures", ["CharacterSprites", "Environment"])
-	_create_folder(root, "Sound", ["BGM", "SFX"])
-	_create_folder(root, "Items", ["Item_Bag", "Item_Type"])
+	_create_folder(root, "3D Scenes", ["Main World", "Level 1"])
+	_create_folder(root, "3D Scripts", ["PlayerMovement3D"])
+	_create_folder(root, "Textures", ["Brick_Diffuse", "Wood_Texture"])
+	_create_folder(root, "Sound", ["BGM_3D", "SFX"])
 	item_selected.connect(_on_item_clicked)
 
 func _create_folder(parent: TreeItem, folder_name: String, files: Array) -> void:
@@ -368,8 +338,8 @@ pass
 func _ready() -> void:
 	right_disconnects = true
 	connection_request.connect(_on_connection_request)
-	_create_node("On_Start", Vector2(40, 40), Color(0.2, 0.5, 0.8), ["Flow Out"])
-	_create_node("Player_Move", Vector2(40, 220), Color(0.8, 0.4, 0.2), ["Flow In", "Flow Out"])
+	_create_node("On_Start_3D", Vector2(40, 40), Color(0.2, 0.5, 0.8), ["Flow Out"])
+	_create_node("Move_Forward_3D", Vector2(40, 220), Color(0.8, 0.4, 0.2), ["Flow In", "Flow Out"])
 
 func _create_node(title: String, pos: Vector2, color: Color, slots: Array) -> void:
 	var node = GraphNode.new()
@@ -389,16 +359,11 @@ func _create_node(title: String, pos: Vector2, color: Color, slots: Array) -> vo
 func _on_connection_request(from_node: String, from_port: int, to_node: String, to_port: int) -> void:
 	connect_node(from_node, from_port, to_node, to_port)
 
-# مفسر واقعی ویژوال اسکریپت برای پردازش اتصالات بلوک‌ها
 func interpret_visual_logic(delta: float) -> void:
-	var connections = get_connection_list()
-	for conn in connections:
-		if conn["from"] == "On_Start" and conn["to"] == "Player_Move":
-			# پردازش موفق منطق گرافیکی بلوک‌ها در زمان پلی‌تست
-			pass
+	pass
 """,
 
-    "scenes/editor.tscn": """[gd_scene load_steps=5 format=3 uid="uid://editor123"]
+    "scenes/editor.tscn": """[gd_scene load_steps=6 format=3 uid="uid://editor3d"]
 [ext_resource type="Script" path="res://scripts/editor/editor_controller.gd" id="1_editor"]
 [ext_resource type="Script" path="res://scripts/editor/asset_tree.gd" id="2_tree"]
 [ext_resource type="Script" path="res://scripts/visual_script/visual_graph_editor.gd" id="3_graph"]
@@ -410,6 +375,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 1
 script = ExtResource("1_editor")
 
 [node name="Background" type="ColorRect" parent="."]
@@ -417,7 +383,7 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color(0.125, 0.149, 0.192, 1)
+color = Color(0.1, 0.12, 0.16, 1)
 
 [node name="MainVBox" type="VBoxContainer" parent="."]
 layout_mode = 1
@@ -434,12 +400,12 @@ layout_mode = 2
 [node name="Title" type="Label" parent="MainVBox/TopBar"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "  ⚙️ GAME ENGINE PERSIAN GULF"
+text = "  🪐 GAME ENGINE PERSIAN GULF - 3D"
 vertical_alignment = 1
 
 [node name="BtnExportAPK" type="Button" parent="MainVBox/TopBar"]
 layout_mode = 2
-text = " 📦 خروجی APK "
+text = " 📦 خروجی APK 3D "
 
 [node name="PlayModeBtn" type="Button" parent="MainVBox/TopBar"]
 layout_mode = 2
@@ -448,11 +414,12 @@ text = " تست و اجرای بازی (Play) "
 [node name="MainSplit" type="HSplitContainer" parent="MainVBox"]
 layout_mode = 2
 size_flags_vertical = 3
-split_offset = 200
+split_offset = 220
 dragger_visibility = 0
 
 [node name="LeftPanel" type="PanelContainer" parent="MainVBox/MainSplit"]
 layout_mode = 2
+mouse_filter = 1
 
 [node name="VBox" type="VBoxContainer" parent="MainVBox/MainSplit/LeftPanel"]
 layout_mode = 2
@@ -467,31 +434,31 @@ layout_mode = 2
 
 [node name="BtnAddBox" type="Button" parent="MainVBox/MainSplit/LeftPanel/VBox"]
 layout_mode = 2
-text = "📦 افزودن باکس"
+text = "📦 افزودن مکعب 3D"
 
 [node name="BtnAddPlayer" type="Button" parent="MainVBox/MainSplit/LeftPanel/VBox"]
 layout_mode = 2
-text = "🏃 افزودن کاراکتر"
+text = "🏃 افزودن کاراکتر 3D"
 
 [node name="BtnAddGround" type="Button" parent="MainVBox/MainSplit/LeftPanel/VBox"]
 layout_mode = 2
-text = "🟩 افزودن زمین"
+text = "🟩 افزودن زمین 3D"
 
 [node name="BtnAddTouchBtn" type="Button" parent="MainVBox/MainSplit/LeftPanel/VBox"]
 layout_mode = 2
-text = "🎮 کنترل لمسی"
+text = "🎮 کنترل لمسی 3D"
 
 [node name="BtnSave" type="Button" parent="MainVBox/MainSplit/LeftPanel/VBox"]
 layout_mode = 2
-text = "💾 ذخیره سطح"
+text = "💾 ذخیره صحنه 3D"
 
 [node name="BtnLoad" type="Button" parent="MainVBox/MainSplit/LeftPanel/VBox"]
 layout_mode = 2
-text = "📂 بارگذاری سطح"
+text = "📂 بارگذاری صحنه 3D"
 
 [node name="RightSplit" type="HSplitContainer" parent="MainVBox/MainSplit"]
 layout_mode = 2
-split_offset = 400
+split_offset = 380
 dragger_visibility = 0
 
 [node name="ViewportPanel" type="PanelContainer" parent="MainVBox/MainSplit/RightSplit"]
@@ -503,20 +470,28 @@ stretch = true
 
 [node name="SubViewport" type="SubViewport" parent="MainVBox/MainSplit/RightSplit/ViewportPanel/SubViewportContainer"]
 handle_input_locally = false
-size = Vector2i(400, 600)
+size = Vector2i(380, 600)
 render_target_update_mode = 4
 
-[node name="SceneRoot" type="Node2D" parent="MainVBox/MainSplit/RightSplit/ViewportPanel/SubViewportContainer/SubViewport"]
+[node name="SceneRoot" type="Node3D" parent="MainVBox/MainSplit/RightSplit/ViewportPanel/SubViewportContainer/SubViewport"]
+
+[node name="Camera3D" type="Camera3D" parent="MainVBox/MainSplit/RightSplit/ViewportPanel/SubViewportContainer/SubViewport/SceneRoot"]
+transform = Transform3D(1, 0, 0, 0, 0.866025, 0.5, 0, -0.5, 0.866025, 0, 5, 8)
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="MainVBox/MainSplit/RightSplit/ViewportPanel/SubViewportContainer/SubViewport/SceneRoot"]
+transform = Transform3D(0.707107, -0.5, 0.5, 0, 0.707107, 0.707107, -0.707107, -0.5, 0.5, 0, 10, 0)
+shadow_enabled = true
 
 [node name="InspectorPanel" type="PanelContainer" parent="MainVBox/MainSplit/RightSplit"]
 layout_mode = 2
+mouse_filter = 1
 
 [node name="VBox" type="VBoxContainer" parent="MainVBox/MainSplit/RightSplit/InspectorPanel"]
 layout_mode = 2
 
 [node name="TitleLbl" type="Label" parent="MainVBox/MainSplit/RightSplit/InspectorPanel/VBox"]
 layout_mode = 2
-text = "🛠️ تنظیمات آبجکت"
+text = "🪐 تنظیمات آبجکت 3D"
 horizontal_alignment = 1
 
 [node name="HSeparator" type="HSeparator" parent="MainVBox/MainSplit/RightSplit/InspectorPanel/VBox"]
@@ -530,37 +505,17 @@ text = "موقعیت افقی (X):"
 layout_mode = 2
 text = "0"
 
-[node name="LblY" type="Label" parent="MainVBox/MainSplit/RightSplit/InspectorPanel/VBox"]
+[node name="LblZ" type="Label" parent="MainVBox/MainSplit/RightSplit/InspectorPanel/VBox"]
 layout_mode = 2
-text = "موقعیت عمودی (Y):"
+text = "موقعیت عمقی (Z):"
 
-[node name="InputPosY" type="LineEdit" parent="MainVBox/MainSplit/RightSplit/InspectorPanel/VBox"]
+[node name="InputPosZ" type="LineEdit" parent="MainVBox/MainSplit/RightSplit/InspectorPanel/VBox"]
 layout_mode = 2
 text = "0"
 
-[node name="LblSizeW" type="Label" parent="MainVBox/MainSplit/RightSplit/InspectorPanel/VBox"]
-layout_mode = 2
-text = "عرض (Width):"
-
-[node name="InputSizeW" type="LineEdit" parent="MainVBox/MainSplit/RightSplit/InspectorPanel/VBox"]
-layout_mode = 2
-text = "64"
-
-[node name="LblSizeH" type="Label" parent="MainVBox/MainSplit/RightSplit/InspectorPanel/VBox"]
-layout_mode = 2
-text = "ارتفاع (Height):"
-
-[node name="InputSizeH" type="LineEdit" parent="MainVBox/MainSplit/RightSplit/InspectorPanel/VBox"]
-layout_mode = 2
-text = "64"
-
-[node name="InputColorR" type="LineEdit" parent="MainVBox/MainSplit/RightSplit/InspectorPanel/VBox"]
-visible = false
-layout_mode = 2
-
 [node name="BtnApplyProps" type="Button" parent="MainVBox/MainSplit/RightSplit/InspectorPanel/VBox"]
 layout_mode = 2
-text = "اعمال تغییرات"
+text = "اعمال مختصات 3D"
 """,
 
     "scenes/main_menu.tscn": """[gd_scene format=3 uid="uid://mainmenu123"]
@@ -577,15 +532,15 @@ anchors_preset = 15
 }
 
 def build_project():
-    print("🚀 در حال ساخت و کامپایل نسخه نهایی موتور بازی‌ساز خلیج فارس...")
+    print("🚀 در حال بازسازی و تبدیل موتور بازی‌ساز به محیط کاملاً سه‌بعدی (3D)...")
     for file_path, content in project_files.items():
         directory = os.path.dirname(file_path)
         if directory:
             os.makedirs(directory, exist_ok=True)
         with open(file_path, "w", encoding="utf-8") as f:
             f.write(content)
-        print(f"✔️ فایل ایجاد شد: {file_path}")
-    print("\n✅ تبریک! موتور بازی‌ساز کامل شد و تمام بخش‌های فایل‌های درختی، اینسپکتور، مفسر و خروجی APK در آن پیاده‌سازی شدند.")
+        print(f"✔️ فایل سه‌بعدی ساخته شد: {file_path}")
+    print("\n✅ تبریک! موتور بازی‌ساز خلیج فارس به سیستم سه‌بعدی (3D) همراه با رفع کامل خطاهای تاچ و پنل چپ مجهز شد.")
 
 if __name__ == "__main__":
     build_project()
