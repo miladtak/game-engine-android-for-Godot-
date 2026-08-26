@@ -44,7 +44,7 @@ text = " تست و اجرای بازی (Play) "
 [node name="MainSplit" type="HSplitContainer" parent="MainVBox"]
 layout_mode = 2
 size_flags_vertical = 3
-split_offset = 220
+split_offset = 200
 dragger_visibility = 0
 
 [node name="LeftPanel" type="PanelContainer" parent="MainVBox/MainSplit"]
@@ -74,7 +74,7 @@ text = "🟩 افزودن زمین"
 
 [node name="BtnAddTouchBtn" type="Button" parent="MainVBox/MainSplit/LeftPanel/VBox"]
 layout_mode = 2
-text = "🎮 افزودن کنترل لمسی"
+text = "🎮 کنترل لمسی"
 
 [node name="BtnSave" type="Button" parent="MainVBox/MainSplit/LeftPanel/VBox"]
 layout_mode = 2
@@ -82,7 +82,7 @@ text = "💾 ذخیره پروژه"
 
 [node name="RightSplit" type="HSplitContainer" parent="MainVBox/MainSplit"]
 layout_mode = 2
-split_offset = 550
+split_offset = 400
 dragger_visibility = 0
 
 [node name="ViewportPanel" type="PanelContainer" parent="MainVBox/MainSplit/RightSplit"]
@@ -94,14 +94,41 @@ stretch = true
 
 [node name="SubViewport" type="SubViewport" parent="MainVBox/MainSplit/RightSplit/ViewportPanel/SubViewportContainer"]
 handle_input_locally = false
-size = Vector2i(550, 600)
+size = Vector2i(400, 600)
 render_target_update_mode = 4
 
 [node name="SceneRoot" type="Node2D" parent="MainVBox/MainSplit/RightSplit/ViewportPanel/SubViewportContainer/SubViewport"]
 
-[node name="GraphPanel" type="PanelContainer" parent="MainVBox/MainSplit/RightSplit"]
+[node name="InspectorPanel" type="PanelContainer" parent="MainVBox/MainSplit/RightSplit"]
 layout_mode = 2
 
-[node name="VisualGraphEditor" type="GraphEdit" parent="MainVBox/MainSplit/RightSplit/GraphPanel"]
+[node name="VBox" type="VBoxContainer" parent="MainVBox/MainSplit/RightSplit/InspectorPanel"]
 layout_mode = 2
-script = ExtResource("3_graph")
+
+[node name="TitleLbl" type="Label" parent="MainVBox/MainSplit/RightSplit/InspectorPanel/VBox"]
+layout_mode = 2
+text = "🛠️ تنظیمات آبجکت"
+horizontal_alignment = 1
+
+[node name="HSeparator" type="HSeparator" parent="MainVBox/MainSplit/RightSplit/InspectorPanel/VBox"]
+layout_mode = 2
+
+[node name="LblX" type="Label" parent="MainVBox/MainSplit/RightSplit/InspectorPanel/VBox"]
+layout_mode = 2
+text = "موقعیت افقی (X):"
+
+[node name="InputPosX" type="LineEdit" parent="MainVBox/MainSplit/RightSplit/InspectorPanel/VBox"]
+layout_mode = 2
+text = "0"
+
+[node name="LblY" type="Label" parent="MainVBox/MainSplit/RightSplit/InspectorPanel/VBox"]
+layout_mode = 2
+text = "موقعیت عمودی (Y):"
+
+[node name="InputPosY" type="LineEdit" parent="MainVBox/MainSplit/RightSplit/InspectorPanel/VBox"]
+layout_mode = 2
+text = "0"
+
+[node name="BtnApplyProps" type="Button" parent="MainVBox/MainSplit/RightSplit/InspectorPanel/VBox"]
+layout_mode = 2
+text = "اعمال تغییرات"

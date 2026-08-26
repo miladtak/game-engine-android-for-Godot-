@@ -3,12 +3,17 @@ extends Control
 @onready var scene_root: Node2D = $MainVBox/MainSplit/RightSplit/ViewportPanel/SubViewportContainer/SubViewport/SceneRoot
 @onready var play_mode_btn: Button = $MainVBox/TopBar/PlayModeBtn
 
-# دکمه‌های ابزار (شامل پلاگین کنترل لمسی)
+# دکمه‌های ابزار منوی چپ
 @onready var btn_add_box: Button = $MainVBox/MainSplit/LeftPanel/VBox/BtnAddBox
 @onready var btn_add_player: Button = $MainVBox/MainSplit/LeftPanel/VBox/BtnAddPlayer
 @onready var btn_add_ground: Button = $MainVBox/MainSplit/LeftPanel/VBox/BtnAddGround
 @onready var btn_add_touch_btn: Button = $MainVBox/MainSplit/LeftPanel/VBox/BtnAddTouchBtn
 @onready var btn_save: Button = $MainVBox/MainSplit/LeftPanel/VBox/BtnSave
+
+# فیلدهای پنل اینسپکتور (تنظیمات آبجکت انتخاب شده)
+@onready var input_pos_x: LineEdit = $MainVBox/MainSplit/RightSplit/InspectorPanel/VBox/InputPosX
+@onready var input_pos_y: LineEdit = $MainVBox/MainSplit/RightSplit/InspectorPanel/VBox/InputPosY
+@onready var btn_apply_props: Button = $MainVBox/MainSplit/RightSplit/InspectorPanel/VBox/BtnApplyProps
 
 var selected_node: Node = null
 var is_dragging: bool = false
@@ -24,12 +29,13 @@ func _ready() -> void:
 	if btn_add_ground: btn_add_ground.pressed.connect(_on_add_ground)
 	if btn_add_touch_btn: btn_add_touch_btn.pressed.connect(_on_add_touch_button)
 	if btn_save: btn_save.pressed.connect(_on_save_project)
+	if btn_apply_props: btn_apply_props.pressed.connect(_on_apply_properties)
 
 func _input(event: InputEvent) -> void:
 	if Global.is_playing_preview:
 		return
 		
-	# جابه‌جایی تعاملی بصری اشیاء و دکمه‌های لمسی در ادیتور با لمس گوشی
+	# انتخاب آبجکت با لمس و نمایش مختصات آن در اینسپکتور
 	if event is InputEventScreenTouch:
 		if event.pressed:
 			selected_node = null
@@ -44,15 +50,21 @@ func _input(event: InputEvent) -> void:
 					selected_node = child
 					is_dragging = true
 					drag_offset = child_pos - event.position
+					
+					# پر کردن فیلدهای اینسپکتور با مختصات شیء انتخاب شده
+					if input_pos_x and input_pos_y and child is Node2D:
+						input_pos_x.text = str(int(child.global_position.x))
+						input_pos_y.text = str(int(child.global_position.y))
 					break
 		else:
 			is_dragging = false
-			selected_node = null
 			
 	elif event is InputEventScreenDrag and is_dragging:
 		if selected_node != null:
 			if selected_node is Node2D:
 				selected_node.global_position = event.position + drag_offset
+				if input_pos_x: input_pos_x.text = str(int(selected_node.global_position.x))
+				if input_pos_y: input_pos_y.text = str(int(selected_node.global_position.y))
 			elif selected_node is Control:
 				selected_node.global_position = event.position + drag_offset - (selected_node.size / 2)
 
@@ -71,6 +83,13 @@ func _process(delta: float) -> void:
 				
 				child.move_and_slide()
 
+func _on_apply_properties() -> void:
+	if selected_node != null and selected_node is Node2D:
+		var new_x = input_pos_x.text.to_float()
+		var new_y = input_pos_y.text.to_float()
+		selected_node.global_position = Vector2(new_x, new_y)
+		print("مشخصات آبجکت بروزرسانی شد.")
+
 func _on_add_box() -> void:
 	var body = RigidBody2D.new()
 	var col = CollisionShape2D.new()
@@ -85,7 +104,7 @@ func _on_add_box() -> void:
 	
 	body.add_child(visual)
 	body.add_child(col)
-	body.position = Vector2(400, 150)
+	body.position = Vector2(300, 150)
 	body.freeze = not Global.is_playing_preview
 	scene_root.add_child(body)
 
@@ -106,7 +125,7 @@ func _on_add_player() -> void:
 	
 	player.add_child(visual)
 	player.add_child(col)
-	player.position = Vector2(400, 200)
+	player.position = Vector2(300, 200)
 	scene_root.add_child(player)
 
 func _on_add_ground() -> void:
@@ -125,7 +144,7 @@ func _on_add_ground() -> void:
 	
 	ground.add_child(visual)
 	ground.add_child(col)
-	ground.position = Vector2(400, 450)
+	ground.position = Vector2(300, 450)
 	scene_root.add_child(ground)
 
 func _on_add_touch_button() -> void:
@@ -148,7 +167,6 @@ func _on_add_touch_button() -> void:
 	
 	touch_panel.add_child(btn)
 	scene_root.add_child(touch_panel)
-	print("پلاگین دکمه لمسی اضافه شد.")
 
 func _on_toggle_play_mode() -> void:
 	Global.is_playing_preview = not Global.is_playing_preview
