@@ -92,116 +92,51 @@ func export_project_to_storage(project_path: String, scene_data: Dictionary) -> 
 
     "scripts/editor/editor_controller.gd": """extends Control
 
-@onready var scene_root: Node2D = $MainLayout/GameViewportContainer/SubViewport/SceneRoot
-@onready var btn_add_box: Button = $MainLayout/LeftToolbox/BtnAddBox
-@onready var btn_add_circle: Button = $MainLayout/LeftToolbox/BtnAddCircle
-@onready var btn_add_light: Button = $MainLayout/LeftToolbox/BtnAddLight
-@onready var btn_play: Button = $MainLayout/LeftToolbox/BtnPlay
-@onready var btn_save: Button = $MainLayout/LeftToolbox/BtnSave
-@onready var btn_back: Button = $MainLayout/LeftToolbox/BtnBack
-
-# سیستم جابه‌جایی اشیاء با تاچ مخصوص صفحه موبایل
-var selected_node: Node2D = null
-var is_dragging: bool = false
-var drag_offset: Vector2 = Vector2.ZERO
+@onready var scene_root: Node2D = $MainVBox/MainSplit/RightSplit/ViewportPanel/SubViewportContainer/SubViewport/SceneRoot
+@onready var play_mode_btn: Button = $MainVBox/TopBar/PlayModeBtn
 
 func _ready() -> void:
-	if btn_add_box: btn_add_box.pressed.connect(_on_add_box)
-	if btn_add_circle: btn_add_circle.pressed.connect(_on_add_circle)
-	if btn_add_light: btn_add_light.pressed.connect(_on_add_light)
-	if btn_play: btn_play.pressed.connect(_on_toggle_play)
-	if btn_save: btn_save.pressed.connect(_on_save)
-	if btn_back: btn_back.pressed.connect(func(): get_tree().change_scene_to_file("res://scenes/main_menu.tscn"))
+	if play_mode_btn:
+		play_mode_btn.pressed.connect(_on_toggle_play_mode)
 
-func _input(event: InputEvent) -> void:
-	if Global.is_playing_preview:
-		return
-		
-	if event is InputEventScreenTouch:
-		if event.pressed:
-			for child in scene_root.get_children():
-				if child is Node2D:
-					if event.position.distance_to(child.global_position) < 60.0:
-						selected_node = child
-						is_dragging = true
-						drag_offset = child.global_position - event.position
-						break
-		else:
-			is_dragging = false
-			selected_node = null
-			
-	elif event is InputEventScreenDrag and is_dragging:
-		if selected_node != null:
-			selected_node.global_position = event.position + drag_offset
-
-func _on_add_box() -> void:
-	var body = RigidBody2D.new()
-	var col = CollisionShape2D.new()
-	var shape = RectangleShape2D.new()
-	shape.size = Vector2(64, 64)
-	col.shape = shape
-	
-	var visual = ColorRect.new()
-	visual.size = Vector2(64, 64)
-	visual.position = Vector2(-32, -32)
-	visual.color = Color(0.2, 0.6, 0.9)
-	
-	body.add_child(visual)
-	body.add_child(col)
-	body.position = Vector2(randf_range(200, 800), 200)
-	body.freeze = not Global.is_playing_preview
-	scene_root.add_child(body)
-
-func _on_add_circle() -> void:
-	var body = RigidBody2D.new()
-	var col = CollisionShape2D.new()
-	var shape = CircleShape2D.new()
-	shape.radius = 32.0
-	col.shape = shape
-	
-	var visual = Panel.new()
-	visual.size = Vector2(64, 64)
-	visual.position = Vector2(-32, -32)
-	
-	body.add_child(visual)
-	body.add_child(col)
-	body.position = Vector2(randf_range(200, 800), 200)
-	body.freeze = not Global.is_playing_preview
-	scene_root.add_child(body)
-
-func _on_add_light() -> void:
-	var light = PointLight2D.new()
-	light.color = Color(1.0, 0.85, 0.5)
-	light.energy = 1.5
-	light.position = Vector2(500, 300)
-	scene_root.add_child(light)
-
-func _on_toggle_play() -> void:
+func _on_toggle_play_mode() -> void:
 	Global.is_playing_preview = not Global.is_playing_preview
-	if btn_play:
-		btn_play.text = "توقف بازی (Stop)" if Global.is_playing_preview else "تست و اجرای بازی (Play)"
 	
+	if Global.is_playing_preview:
+		play_mode_btn.text = " توقف بازی "
+		play_mode_btn.modulate = Color(1, 0.4, 0.4) # رنگ قرمز
+	else:
+		play_mode_btn.text = " حالت بازی "
+		play_mode_btn.modulate = Color(1, 1, 1) # رنگ پیش‌فرض
+		
+	# اعمال فیزیک به اشیاء داخل صحنه
 	for child in scene_root.get_children():
 		if child is RigidBody2D:
 			child.freeze = not Global.is_playing_preview
+""",
 
-func _on_save() -> void:
-	var objects_data: Array = []
-	for child in scene_root.get_children():
-		if child is Node2D:
-			var obj = {
-				"type": child.get_class(),
-				"position_x": child.position.x,
-				"position_y": child.position.y
-			}
-			objects_data.append(obj)
+    "scripts/editor/asset_tree.gd": """extends Tree
+
+func _ready() -> void:
+	# پیکربندی ظاهر درختی
+	hide_root = true
+	var root = create_item()
 	
-	Global.current_scene_data["objects"] = objects_data
+	# ساخت ساختار پوشه‌های موتور
+	_create_folder(root, "Scenes", ["Main Level", "Start Screen"])
+	_create_folder(root, "Scripts", ["PlayerControl", "AIBehavior"])
+	_create_folder(root, "Textures", ["CharacterSprites", "Environment"])
+	_create_folder(root, "Sound", ["BGM", "SFX"])
+	_create_folder(root, "Plugins", ["AI_Behavior_Pack", "Cutscene_Creator"])
+	_create_folder(root, "Items", ["Item_Bag", "Item_Type"])
+
+func _create_folder(parent: TreeItem, folder_name: String, files: Array) -> void:
+	var folder = create_item(parent)
+	folder.set_text(0, folder_name)
 	
-	if Global.save_project():
-		print("پروژه با موفقیت در سیستم ذخیره شد.")
-	else:
-		print("خطا در ذخیره‌سازی پروژه.")
+	for file in files:
+		var file_item = create_item(folder)
+		file_item.set_text(0, file)
 """,
 
     "scripts/editor/touch_editor_controls.gd": """extends Control
@@ -219,13 +154,44 @@ pass
 pass
 """,
 
-    "scripts/visual_script/visual_graph_editor.gd": """extends Control
-# اسکریپت مربوط به سیستم ویژوال اسکریپتینگ
-pass
+    "scripts/visual_script/visual_graph_editor.gd": """extends GraphEdit
+
+func _ready() -> void:
+	# تنظیمات گراف
+	right_disconnects = true
+	connection_request.connect(_on_connection_request)
+	
+	# ساخت چند بلوک تستی شبیه عکس
+	_create_node("On_Start", Vector2(40, 40), Color(0.2, 0.5, 0.8), ["Flow Out"])
+	_create_node("Variable: Player_Object", Vector2(80, 120), Color(0.3, 0.4, 0.7), ["Flow In", "Flow Out"])
+	_create_node("Get_Item", Vector2(40, 300), Color(0.4, 0.5, 0.9), ["Flow In", "تعداد آیتم Out"])
+
+func _create_node(title: String, pos: Vector2, color: Color, slots: Array) -> void:
+	var node = GraphNode.new()
+	node.title = title
+	node.position_offset = pos
+	
+	# ساخت پورت‌های ورودی و خروجی برای سیم‌کشی
+	var idx = 0
+	for slot_name in slots:
+		var lbl = Label.new()
+		lbl.text = slot_name
+		node.add_child(lbl)
+		var is_in = slot_name.contains("In")
+		var is_out = slot_name.contains("Out")
+		node.set_slot(idx, is_in, 0, color, is_out, 0, color)
+		idx += 1
+		
+	add_child(node)
+
+func _on_connection_request(from_node: String, from_port: int, to_node: String, to_port: int) -> void:
+	connect_node(from_node, from_port, to_node, to_port)
 """,
 
-    "scenes/editor.tscn": """[gd_scene load_steps=2 format=3 uid="uid://editor123"]
+    "scenes/editor.tscn": """[gd_scene load_steps=5 format=3 uid="uid://editor123"]
 [ext_resource type="Script" path="res://scripts/editor/editor_controller.gd" id="1_editor"]
+[ext_resource type="Script" path="res://scripts/editor/asset_tree.gd" id="2_tree"]
+[ext_resource type="Script" path="res://scripts/visual_script/visual_graph_editor.gd" id="3_graph"]
 
 [node name="EditorController" type="Control"]
 layout_mode = 3
@@ -236,7 +202,14 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_editor")
 
-[node name="MainLayout" type="HBoxContainer" parent="."]
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.125, 0.149, 0.192, 1)
+
+[node name="MainVBox" type="VBoxContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -244,45 +217,76 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="LeftToolbox" type="VBoxContainer" parent="MainLayout"]
-custom_minimum_size = Vector2(150, 0)
+[node name="TopBar" type="HBoxContainer" parent="MainVBox"]
+custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 
-[node name="BtnAddBox" type="Button" parent="MainLayout/LeftToolbox"]
-layout_mode = 2
-text = "Add Box"
-
-[node name="BtnAddCircle" type="Button" parent="MainLayout/LeftToolbox"]
-layout_mode = 2
-text = "Add Circle"
-
-[node name="BtnAddLight" type="Button" parent="MainLayout/LeftToolbox"]
-layout_mode = 2
-text = "Add Light"
-
-[node name="BtnPlay" type="Button" parent="MainLayout/LeftToolbox"]
-layout_mode = 2
-text = "Play Game"
-
-[node name="BtnSave" type="Button" parent="MainLayout/LeftToolbox"]
-layout_mode = 2
-text = "Save Project"
-
-[node name="BtnBack" type="Button" parent="MainLayout/LeftToolbox"]
-layout_mode = 2
-text = "Back to Menu"
-
-[node name="GameViewportContainer" type="SubViewportContainer" parent="MainLayout"]
+[node name="Title" type="Label" parent="MainVBox/TopBar"]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 20
+text = "  ⚙️ GAME ENGINE PERSIAN GULF"
+vertical_alignment = 1
+
+[node name="Tabs" type="HBoxContainer" parent="MainVBox/TopBar"]
+layout_mode = 2
+alignment = 1
+
+[node name="BtnBuild" type="Button" parent="MainVBox/TopBar/Tabs"]
+layout_mode = 2
+text = "Build"
+flat = true
+
+[node name="BtnAssets" type="Button" parent="MainVBox/TopBar/Tabs"]
+layout_mode = 2
+text = "Assets"
+flat = true
+
+[node name="BtnSettings" type="Button" parent="MainVBox/TopBar/Tabs"]
+layout_mode = 2
+text = "Settings"
+flat = true
+
+[node name="PlayModeBtn" type="Button" parent="MainVBox/TopBar"]
+layout_mode = 2
+text = " حالت بازی "
+
+[node name="MainSplit" type="HSplitContainer" parent="MainVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+split_offset = 250
+
+[node name="LeftPanel" type="PanelContainer" parent="MainVBox/MainSplit"]
+layout_mode = 2
+
+[node name="AssetTree" type="Tree" parent="MainVBox/MainSplit/LeftPanel"]
+layout_mode = 2
+script = ExtResource("2_tree")
+
+[node name="RightSplit" type="HSplitContainer" parent="MainVBox/MainSplit"]
+layout_mode = 2
+split_offset = 500
+
+[node name="ViewportPanel" type="PanelContainer" parent="MainVBox/MainSplit/RightSplit"]
+layout_mode = 2
+
+[node name="SubViewportContainer" type="SubViewportContainer" parent="MainVBox/MainSplit/RightSplit/ViewportPanel"]
+layout_mode = 2
 stretch = true
 
-[node name="SubViewport" type="SubViewport" parent="MainLayout/GameViewportContainer"]
+[node name="SubViewport" type="SubViewport" parent="MainVBox/MainSplit/RightSplit/ViewportPanel/SubViewportContainer"]
 handle_input_locally = false
-size = Vector2i(1002, 648)
+size = Vector2i(500, 500)
 render_target_update_mode = 4
 
-[node name="SceneRoot" type="Node2D" parent="MainLayout/GameViewportContainer/SubViewport"]
+[node name="SceneRoot" type="Node2D" parent="MainVBox/MainSplit/RightSplit/ViewportPanel/SubViewportContainer/SubViewport"]
+
+[node name="GraphPanel" type="PanelContainer" parent="MainVBox/MainSplit/RightSplit"]
+layout_mode = 2
+
+[node name="VisualGraphEditor" type="GraphEdit" parent="MainVBox/MainSplit/RightSplit/GraphPanel"]
+layout_mode = 2
+script = ExtResource("3_graph")
 """,
 
     "scenes/main_menu.tscn": """[gd_scene format=3 uid="uid://mainmenu123"]
@@ -314,7 +318,7 @@ def build_project():
             
         print(f"✔️ فایل ایجاد شد: {file_path}")
         
-    print("\\n✅ پروژه با موفقیت ایجاد شد! حالا می‌توانید آن را در گودوت باز کنید.")
+    print("\n✅ پروژه با موفقیت ایجاد شد! حالا می‌توانید آن را در گودوت باز کنید.")
 
 if __name__ == "__main__":
     build_project()
