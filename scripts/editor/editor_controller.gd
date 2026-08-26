@@ -3,7 +3,7 @@ extends Control
 @onready var scene_root: Node2D = $MainVBox/MainSplit/RightSplit/ViewportPanel/SubViewportContainer/SubViewport/SceneRoot
 @onready var play_mode_btn: Button = $MainVBox/TopBar/PlayModeBtn
 
-# دکمه‌های ابزار (شامل پلاگین کنترل لمسی جدید)
+# دکمه‌های ابزار (شامل پلاگین کنترل لمسی)
 @onready var btn_add_box: Button = $MainVBox/MainSplit/LeftPanel/VBox/BtnAddBox
 @onready var btn_add_player: Button = $MainVBox/MainSplit/LeftPanel/VBox/BtnAddPlayer
 @onready var btn_add_ground: Button = $MainVBox/MainSplit/LeftPanel/VBox/BtnAddGround
@@ -14,7 +14,6 @@ var selected_node: Node = null
 var is_dragging: bool = false
 var drag_offset: Vector2 = Vector2.ZERO
 
-# متغیرهای کنترلی برای پلیر در زمان تست بازی
 var touch_input_dir: float = 0.0
 var touch_jump_triggered: bool = false
 
@@ -27,11 +26,10 @@ func _ready() -> void:
 	if btn_save: btn_save.pressed.connect(_on_save_project)
 
 func _input(event: InputEvent) -> void:
-	# در حالت اجرای بازی، جابه‌جایی ادیتوری غیرفعال شود تا دکمه‌ها کار کنند
 	if Global.is_playing_preview:
 		return
 		
-	# سیستم انتخاب و درگ کردن اشیاء و دکمه‌های لمسی در محیط ادیتور با لمس صفحه
+	# جابه‌جایی تعاملی بصری اشیاء و دکمه‌های لمسی در ادیتور با لمس گوشی
 	if event is InputEventScreenTouch:
 		if event.pressed:
 			selected_node = null
@@ -59,7 +57,6 @@ func _input(event: InputEvent) -> void:
 				selected_node.global_position = event.position + drag_offset - (selected_node.size / 2)
 
 func _process(delta: float) -> void:
-	# منطق کنترل کاراکتر توسط دکمه‌های لمسی پلاگین شده در حالت Play
 	if Global.is_playing_preview:
 		for child in scene_root.get_children():
 			if child.name == "PlayerCharacter" and child is CharacterBody2D:
@@ -132,21 +129,18 @@ func _on_add_ground() -> void:
 	scene_root.add_child(ground)
 
 func _on_add_touch_button() -> void:
-	# ساخت یک پلاگین دکمه لمسی تعاملی (مثل دکمه پرش یا حرکت) به صورت بصری
 	var touch_panel = Panel.new()
 	touch_panel.name = "TouchControlButton"
 	touch_panel.size = Vector2(80, 80)
 	touch_panel.position = Vector2(100, 350)
 	
 	var btn = Button.new()
-	btn.text = "⬆️ پرش / اکشن"
+	btn.text = "⬆️ پرش"
 	btn.size = Vector2(80, 80)
-	btn.flat = false
 	
-	# اتصال رویداد لمس دکمه به کنترل کاراکتر
 	btn.button_down.connect(func(): 
 		touch_jump_triggered = true
-		touch_input_dir = 1.0 # نمونه حرکت
+		touch_input_dir = 1.0
 	)
 	btn.button_up.connect(func(): 
 		touch_input_dir = 0.0
@@ -154,7 +148,7 @@ func _on_add_touch_button() -> void:
 	
 	touch_panel.add_child(btn)
 	scene_root.add_child(touch_panel)
-	print("پلاگین دکمه لمسی به محیط بازی اضافه شد و قابل جابه‌جایی است.")
+	print("پلاگین دکمه لمسی اضافه شد.")
 
 func _on_toggle_play_mode() -> void:
 	Global.is_playing_preview = not Global.is_playing_preview
@@ -172,4 +166,3 @@ func _on_toggle_play_mode() -> void:
 func _on_save_project() -> void:
 	if Global.save_project():
 		print("پروژه با موفقیت ذخیره شد.")
- ذخیره شد."
