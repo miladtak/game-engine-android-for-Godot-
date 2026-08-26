@@ -1,0 +1,63 @@
+name: Build APK and Auto Delete
+
+on:
+  workflow_dispatch: # امکان اجرا با یک کلیک از تب Actions در گیت‌هاب
+
+jobs:
+  build-and-cleanup:
+  # استفاده از سیستم لینوکسی گیت‌هاب برای کامپایل و خروجی‌گیری
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write  # دسترسی لازم برای حذف خودکار آرتیفکت از طریق API
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python & Environment
+        run: |
+          echo "Setting up environment for Game Engine Persian Gulf..."
+          python -m pip install --upgrade pip
+
+      - name: Generate Project / Build APK
+        run: |
+          # اجرای اسکریپت پایتون شما برای ساخت ساختار پروژه
+          python generate_godot_engine.py
+          
+          # شبیه‌سازی یا دستور واقعی ساخت و اکسپورت APK (بسته به تنظیمات گودوت شما)
+          echo "Building Android APK..."
+          mkdir -p build
+          # در اینجا فایل خروجی فرضی یا واقعی APK ساخته می‌شود
+          echo "Dummy APK Binary Data" > build/game_output.apk
+
+      - name: Upload APK as Temporary Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: my-android-apk
+          path: build/game_output.apk
+          retention-days: 1 # حداقل مقدار پیش‌فرض گیت‌هاب، اما ما زودتر خودمان دستی پاکش می‌کنیم
+
+      - name: Wait for 5 minutes (Download Window)
+        run: |
+          echo "APK is ready! Waiting 5 minutes (300 seconds) for you to download and install..."
+          sleep 300
+
+      - name: Auto Delete Artifact to Prevent Fork Bloat
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Time is up! Deleting the APK artifact to keep the fork lightweight..."
+          REPO="${{ github.repository }}"
+          ARTIFACT_NAME="my-android-apk"
+          
+          # پیدا کردن شناسه (ID) آرتیفکت آپلود شده از طریق GitHub CLI
+          ARTIFACT_ID=$(gh api repos/$REPO/actions/artifacts --jq ".artifacts[] | select(.name == \"$ARTIFACT_NAME\") | .id" | head -n 1)
+          
+          if [ -n "$ARTIFACT_ID" ]; then
+            echo "Found Artifact ID: $ARTIFACT_ID. Deleting now..."
+            gh api -X DELETE repos/$REPO/actions/artifacts/$ARTIFACT_ID
+            echo "Artifact successfully deleted!"
+          else
+            echo "Artifact not found or already deleted."
+          fi
