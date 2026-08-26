@@ -1,10 +1,10 @@
 extends Node
 
-var current_project_name: String = "MyAwesomeGame"
-var current_project_path: String = "user://projects/MyAwesomeGame/"
+var current_project_name: String = "My3DGame"
+var current_project_path: String = "user://projects/My3DGame/"
 var current_scene_data: Dictionary = {
 	"objects": [],
-	"camera": {"zoom": 1.0, "position": Vector2.ZERO},
+	"camera": {"fov": 75.0},
 	"physics": {"gravity": 980.0}
 }
 var is_playing_preview: bool = false

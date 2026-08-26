@@ -5,11 +5,10 @@ signal file_selected(file_name: String)
 func _ready() -> void:
 	hide_root = true
 	var root = create_item()
-	_create_folder(root, "Scenes", ["Main Level", "Start Screen"])
-	_create_folder(root, "Scripts", ["PlayerControl", "AIBehavior"])
-	_create_folder(root, "Textures", ["CharacterSprites", "Environment"])
-	_create_folder(root, "Sound", ["BGM", "SFX"])
-	_create_folder(root, "Items", ["Item_Bag", "Item_Type"])
+	_create_folder(root, "3D Scenes", ["Main World", "Level 1"])
+	_create_folder(root, "3D Scripts", ["PlayerMovement3D"])
+	_create_folder(root, "Textures", ["Brick_Diffuse", "Wood_Texture"])
+	_create_folder(root, "Sound", ["BGM_3D", "SFX"])
 	item_selected.connect(_on_item_clicked)
 
 func _create_folder(parent: TreeItem, folder_name: String, files: Array) -> void:
