@@ -1,0 +1,71 @@
+[gd_scene load_steps=2 format=3 uid="uid://editor002"]
+
+[ext_resource type="Script" path="res://scripts/editor/editor_controller.gd" id="1_edit"]
+
+[node name="Editor" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_edit")
+
+[node name="MainLayout" type="HSplitContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="LeftToolbox" type="VBoxContainer" parent="MainLayout"]
+custom_minimum_size = Vector2(220, 0)
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ToolsLabel" type="Label" parent="MainLayout/LeftToolbox"]
+layout_mode = 2
+text = "ابزارهای بازی"
+horizontal_alignment = 1
+
+[node name="BtnAddBox" type="Button" parent="MainLayout/LeftToolbox"]
+layout_mode = 2
+text = "افزودن شیء مکعبی (Box)"
+
+[node name="BtnAddCircle" type="Button" parent="MainLayout/LeftToolbox"]
+layout_mode = 2
+text = "افزودن شیء دایره‌ای (Circle)"
+
+[node name="BtnAddLight" type="Button" parent="MainLayout/LeftToolbox"]
+layout_mode = 2
+text = "افزودن نور (Point Light)"
+
+[node name="HSeparator" type="HSeparator" parent="MainLayout/LeftToolbox"]
+layout_mode = 2
+
+[node name="BtnPlay" type="Button" parent="MainLayout/LeftToolbox"]
+layout_mode = 2
+text = "تست و اجرای بازی (Play)"
+
+[node name="BtnSave" type="Button" parent="MainLayout/LeftToolbox"]
+layout_mode = 2
+text = "ذخیره صحنه (Save)"
+
+[node name="BtnBack" type="Button" parent="MainLayout/LeftToolbox"]
+layout_mode = 2
+text = "بازگشت به منو"
+
+[node name="GameViewportContainer" type="SubViewportContainer" parent="MainLayout"]
+layout_mode = 2
+size_flags_horizontal = 3
+stretch = true
+
+[node name="SubViewport" type="SubViewport" parent="MainLayout/GameViewportContainer"]
+handle_input_locally = true
+physics_object_picking = true
+size = Vector2i(1050, 720)
+render_target_update_mode = 3
+
+[node name="SceneRoot" type="Node2D" parent="MainLayout/GameViewportContainer/SubViewport"]
+
+[node name="Camera2D" type="Camera2D" parent="MainLayout/GameViewportContainer/SubViewport/SceneRoot"]
+position = Vector2(525, 360)
