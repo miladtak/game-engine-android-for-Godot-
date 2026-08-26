@@ -1,0 +1,30 @@
+name: Generate and Build Godot Persian Gulf Engine
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run Engine Generator
+        run: |
+          python generate_godot_engine.py
+
+      - name: Commit and Push Generated Engine Files
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions@github.com"
+          git add .
+          git diff --quiet && git diff --staged --quiet || git commit -m "Auto-generated Godot Engine structure and code"
+          git push
