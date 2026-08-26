@@ -1,6 +1,6 @@
 import os
 
-# ساختار نهایی موتور بازی‌ساز سه‌بعدی پیشرفته (با قابلیت انتخاب دقیق لمسی و تغییر سایز، چرخش و جابه‌جایی کامل)
+# ساختار کامل موتور بازی‌ساز سه‌بعدی به همراه فایل تنظیمات اکسپورت اندروید
 project_files = {
     "project.godot": """config_version=5
 
@@ -16,6 +16,28 @@ Global="*res://scripts/autoload/global.gd"
 window/handheld/orientation=1
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
+""",
+
+    "export_presets.cfg": """[preset.0]
+
+name="Android"
+platform="Android"
+runnable=true
+custom_features=""
+export_filter="all_resources"
+include_filter=""
+exclude_filter=""
+export_path=""
+encrypt_pck=false
+encrypt_directory=false
+script_export_mode=1
+
+[preset.0.options]
+version/code=1
+version/name="1.0"
+package/unique_name="com.miladtak.gameenginepersiangulf"
+boot_splash/show=true
+command_line/arguments=""
 """,
 
     "scripts/autoload/global.gd": """extends Node
@@ -104,7 +126,6 @@ func build_android_apk() -> void:
 @onready var btn_load: Button = $MainVBox/MainSplit/LeftPanel/VBox/BtnLoad
 @onready var asset_tree: Tree = $MainVBox/MainSplit/LeftPanel/VBox/AssetTree
 
-# فیلدهای پیشرفته اینسپکتور (موقعیت، مقیاس و چرخش)
 @onready var input_pos_x: LineEdit = $MainVBox/MainSplit/RightSplit/InspectorPanel/VBox/InputPosX
 @onready var input_pos_y: LineEdit = $MainVBox/MainSplit/RightSplit/InspectorPanel/VBox/InputPosY
 @onready var input_pos_z: LineEdit = $MainVBox/MainSplit/RightSplit/InspectorPanel/VBox/InputPosZ
@@ -133,7 +154,6 @@ func _input(event: InputEvent) -> void:
 	if Global.is_playing_preview:
 		return
 		
-	# سیستم انتخاب هوشمند سه‌بعدی: هر شیء یا زمینی که لمس کنید انتخاب می‌شود
 	if event is InputEventScreenTouch:
 		if event.pressed:
 			selected_node = null
@@ -145,7 +165,7 @@ func _input(event: InputEvent) -> void:
 					if camera:
 						var screen_pos = camera.unproject_position(child.global_position)
 						var dist = screen_pos.distance_to(event.position)
-						if dist < min_dist and dist < 140.0: # محدوده تشخیص لمس روی آبجکت
+						if dist < min_dist and dist < 140.0:
 							min_dist = dist
 							closest_node = child
 							
@@ -153,7 +173,6 @@ func _input(event: InputEvent) -> void:
 				selected_node = closest_node
 				is_dragging = true
 				populate_inspector()
-				print("آبجکت انتخاب شد: ", selected_node.name)
 		else:
 			is_dragging = false
 			
@@ -174,70 +193,57 @@ func populate_inspector() -> void:
 		if input_rot_y: input_rot_y.text = str(snapped(selected_node.rotation_degrees.y, 0.1))
 
 func _process(_delta: float) -> void:
-	if Global.is_playing_preview:
-		pass
+	pass
 
 func _on_add_3d_box() -> void:
 	var body = RigidBody3D.new()
 	body.name = "Box3D_" + str(randi() % 1000)
-	
 	var mesh_inst = MeshInstance3D.new()
 	var box_mesh = BoxMesh.new()
 	box_mesh.size = Vector3(1.5, 1.5, 1.5)
 	mesh_inst.mesh = box_mesh
-	
 	var col = CollisionShape3D.new()
 	var shape = BoxShape3D.new()
 	shape.size = Vector3(1.5, 1.5, 1.5)
 	col.shape = shape
-	
 	body.add_child(mesh_inst)
 	body.add_child(col)
 	body.position = Vector3(randf_range(-2, 2), 3, randf_range(-2, 2))
 	scene_root.add_child(body)
-	print("📦 مکعب سه‌بعدی اضافه شد.")
 
 func _on_add_3d_player() -> void:
 	var player = CharacterBody3D.new()
 	player.name = "Player3D_" + str(randi() % 1000)
-	
 	var mesh_inst = MeshInstance3D.new()
 	var capsule = CapsuleMesh.new()
 	capsule.radius = 0.5
 	capsule.height = 2.0
 	mesh_inst.mesh = capsule
-	
 	var col = CollisionShape3D.new()
 	var shape = CapsuleShape3D.new()
 	shape.radius = 0.5
 	shape.height = 2.0
 	col.shape = shape
-	
 	player.add_child(mesh_inst)
 	player.add_child(col)
 	player.position = Vector3(0, 2, 0)
 	scene_root.add_child(player)
-	print("🏃 کاراکتر سه‌بعدی اضافه شد.")
 
 func _on_add_3d_ground() -> void:
 	var ground = StaticBody3D.new()
 	ground.name = "Ground3D_" + str(randi() % 1000)
-	
 	var mesh_inst = MeshInstance3D.new()
 	var plane = BoxMesh.new()
 	plane.size = Vector3(6.0, 0.4, 6.0)
 	mesh_inst.mesh = plane
-	
 	var col = CollisionShape3D.new()
 	var shape = BoxShape3D.new()
 	shape.size = Vector3(6.0, 0.4, 6.0)
 	col.shape = shape
-	
 	ground.add_child(mesh_inst)
 	ground.add_child(col)
 	ground.position = Vector3(0, 0, 0)
 	scene_root.add_child(ground)
-	print("🟩 زمین سه‌بعدی اضافه شد.")
 
 func _on_toggle_play_mode() -> void:
 	Global.is_playing_preview = not Global.is_playing_preview
@@ -274,8 +280,6 @@ func _on_apply_properties() -> void:
 		
 		var ry = input_rot_y.text.to_float()
 		selected_node.rotation_degrees = Vector3(0, ry, 0)
-		
-		print("تغییرات ابعاد، موقعیت و چرخش اعمال شد.")
 
 func _on_save_project() -> void:
 	var objects_data: Array = []
@@ -291,8 +295,7 @@ func _on_save_project() -> void:
 				"scale_z": child.scale.z,
 				"rot_y": child.rotation_degrees.y
 			})
-	if Global.save_project(objects_data):
-		print("صحنه سه‌بعدی با موفقیت ذخیره شد!")
+	Global.save_project(objects_data)
 
 func _on_load_project() -> void:
 	var loaded_objects = Global.load_project()
@@ -316,8 +319,6 @@ func _on_load_project() -> void:
 			node.global_position = Vector3(obj_data.get("pos_x", 0), obj_data.get("pos_y", 0), obj_data.get("pos_z", 0))
 			node.scale = Vector3(obj_data.get("scale_x", 1), obj_data.get("scale_y", 1), obj_data.get("scale_z", 1))
 			node.rotation_degrees = Vector3(0, obj_data.get("rot_y", 0), 0)
-			
-	print("صحنه سه‌بعدی با موفقیت بارگذاری شد!")
 """,
 
     "scripts/editor/asset_tree.gd": """extends Tree
@@ -565,7 +566,7 @@ text = "1"
 layout_mode = 2
 text = "عمق (Scale Z):"
 
-[node name="InputScaleZ" type="LineEdit" parent="MainVBox/MainSalit/RightSplit/InspectorPanel/VBox"]
+[node name="InputScaleZ" type="LineEdit" parent="MainVBox/MainSplit/RightSplit/InspectorPanel/VBox"]
 layout_mode = 2
 text = "1"
 
@@ -578,7 +579,7 @@ text = "چرخش افقی (Rotation Y):"
 
 [node name="InputRotY" type="LineEdit" parent="MainVBox/MainSplit/RightSplit/InspectorPanel/VBox"]
 layout_mode = 2
-text = "0"
+text/text = "0"
 
 [node name="BtnApplyProps" type="Button" parent="MainVBox/MainSplit/RightSplit/InspectorPanel/VBox"]
 layout_mode = 2
@@ -599,7 +600,7 @@ anchors_preset = 15
 }
 
 def build_project():
-    print("🚀 در حال ساخت نسخه حرفه‌ای و کامل موتور سه‌بعدی (3D Pro)...")
+    print("🚀 در حال ساخت نسخه حرفه‌ای و کامل موتور سه‌بعدی (3D Pro) به همراه تنظیمات اکسپورت...")
     for file_path, content in project_files.items():
         directory = os.path.dirname(file_path)
         if directory:
@@ -607,7 +608,7 @@ def build_project():
         with open(file_path, "w", encoding="utf-8") as f:
             f.write(content)
         print(f"✔️ فایل به‌روزرسانی شد: {file_path}")
-    print("\n✅ همه‌چیز آماده است! هر شیء یا زمینی را که لمس کنید انتخاب می‌شود و می‌توانید سایز، ارتفاع، عرض، عمق و چرخش آن را به دلخواه تنظیم کنید.")
+    print("\n✅ همه‌چیز آماده است! فایل تنظیمات export_presets.cfg نیز با موفقیت ایجاد شد.")
 
 if __name__ == "__main__":
     build_project()
