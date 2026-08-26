@@ -28,54 +28,58 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="TopBar" type="HBoxContainer" parent="MainVBox"]
-custom_minimum_size = Vector2(0, 50)
+custom_minimum_size = Vector2(0, 45)
 layout_mode = 2
 
 [node name="Title" type="Label" parent="MainVBox/TopBar"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 20
 text = "  ⚙️ GAME ENGINE PERSIAN GULF"
 vertical_alignment = 1
 
-[node name="Tabs" type="HBoxContainer" parent="MainVBox/TopBar"]
-layout_mode = 2
-alignment = 1
-
-[node name="BtnBuild" type="Button" parent="MainVBox/TopBar/Tabs"]
-layout_mode = 2
-text = "Build"
-flat = true
-
-[node name="BtnAssets" type="Button" parent="MainVBox/TopBar/Tabs"]
-layout_mode = 2
-text = "Assets"
-flat = true
-
-[node name="BtnSettings" type="Button" parent="MainVBox/TopBar/Tabs"]
-layout_mode = 2
-text = "Settings"
-flat = true
-
 [node name="PlayModeBtn" type="Button" parent="MainVBox/TopBar"]
 layout_mode = 2
-text = " حالت بازی "
+text = " تست و اجرای بازی (Play) "
 
 [node name="MainSplit" type="HSplitContainer" parent="MainVBox"]
 layout_mode = 2
 size_flags_vertical = 3
-split_offset = 250
+split_offset = 220
+dragger_visibility = 0
 
 [node name="LeftPanel" type="PanelContainer" parent="MainVBox/MainSplit"]
 layout_mode = 2
 
-[node name="AssetTree" type="Tree" parent="MainVBox/MainSplit/LeftPanel"]
+[node name="VBox" type="VBoxContainer" parent="MainVBox/MainSplit/LeftPanel"]
 layout_mode = 2
-script = ExtResource("2_tree")
+
+[node name="AssetTree" type="Tree" parent="MainVBox/MainSplit/LeftPanel/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="HSeparator" type="HSeparator" parent="MainVBox/MainSplit/LeftPanel/VBox"]
+layout_mode = 2
+
+[node name="BtnAddBox" type="Button" parent="MainVBox/MainSplit/LeftPanel/VBox"]
+layout_mode = 2
+text = "📦 افزودن باکس"
+
+[node name="BtnAddPlayer" type="Button" parent="MainVBox/MainSplit/LeftPanel/VBox"]
+layout_mode = 2
+text = "🏃 افزودن کاراکتر"
+
+[node name="BtnAddGround" type="Button" parent="MainVBox/MainSplit/LeftPanel/VBox"]
+layout_mode = 2
+text = "🟩 افزودن زمین"
+
+[node name="BtnSave" type="Button" parent="MainVBox/MainSplit/LeftPanel/VBox"]
+layout_mode = 2
+text = "💾 ذخیره پروژه"
 
 [node name="RightSplit" type="HSplitContainer" parent="MainVBox/MainSplit"]
 layout_mode = 2
-split_offset = 500
+split_offset = 550
+dragger_visibility = 0
 
 [node name="ViewportPanel" type="PanelContainer" parent="MainVBox/MainSplit/RightSplit"]
 layout_mode = 2
@@ -86,7 +90,7 @@ stretch = true
 
 [node name="SubViewport" type="SubViewport" parent="MainVBox/MainSplit/RightSplit/ViewportPanel/SubViewportContainer"]
 handle_input_locally = false
-size = Vector2i(500, 500)
+size = Vector2i(550, 600)
 render_target_update_mode = 4
 
 [node name="SceneRoot" type="Node2D" parent="MainVBox/MainSplit/RightSplit/ViewportPanel/SubViewportContainer/SubViewport"]

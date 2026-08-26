@@ -8,11 +8,9 @@ var current_scene_data: Dictionary = {
 	"physics": {"gravity": 980.0}
 }
 var is_playing_preview: bool = false
-
 var exporter: Node
 
 func _ready() -> void:
-	# Load ProjectExporter dynamically to avoid cyclic parsing issues
 	var exporter_script = load("res://scripts/editor/project_exporter.gd")
 	if exporter_script:
 		exporter = exporter_script.new()
