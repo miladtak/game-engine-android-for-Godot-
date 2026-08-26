@@ -1,32 +1,22 @@
 extends Node
 class_name ProjectExporter
 
-# ذخیره اطلاعات بازی ساخته شده در یک پوشه یا فایل ZIP
-func export_project_to_storage(project_name: String, scene_data: Dictionary) -> bool:
-	var dir_path = "user://projects/" + project_name
-	var dir = Directory.new()
+# ذخیره‌سازی داده‌های صحنه روی پوشه مشخص شده در حافظه دستگاه
+func export_project_to_storage(project_path: String, scene_data: Dictionary) -> bool:
+	if not DirAccess.dir_exists_absolute(project_path):
+		var err = DirAccess.make_dir_recursive_absolute(project_path)
+		if err != OK:
+			print("خطا در ایجاد پوشه پروژه: ", err)
+			return false
 	
-	if not dir.dir_exists(dir_path):
-		dir.make_dir_recursive(dir_path)
-	
-	# ذخیره دیتا به صورت JSON
-	var file = File.new()
-	var err = file.open(dir_path + "/main_scene.json", File.WRITE)
-	if err == OK:
-		file.store_string(to_json(scene_data))
+	var file_path = project_path + "project_data.json"
+	var file = FileAccess.open(file_path, FileAccess.WRITE)
+	if file != null:
+		var json_string = JSON.stringify(scene_data, "\t")
+		file.store_string(json_string)
 		file.close()
-		print("پروژه با موفقیت ذخیره شد:", dir_path)
+		print("پروژه با موفقیت ذخیره شد: ", file_path)
 		return true
 	else:
-		print("خطا در ذخیره‌سازی پروژه!")
+		print("خطا در باز کردن فایل ذخیره! کد خطا: ", FileAccess.get_open_error())
 		return false
-
-# اجرای مستقیم بازی داخل ادیتور روی اندروید
-func run_runtime_preview(scene_data: Dictionary, root_node: Node):
-	# ساخت نودها به صورت دینامیک بر اساس دیتای ذخیره شده
-	for item in scene_data.get("nodes", []):
-		var new_node = Sprite.new()
-		if item.has("texture_path"):
-			new_node.texture = load(item["texture_path"])
-		new_node.position = Vector2(item["x"], item["y"])
-		root_node.add_child(new_node)

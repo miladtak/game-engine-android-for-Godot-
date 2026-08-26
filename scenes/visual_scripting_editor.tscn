@@ -1,37 +1,4 @@
-[gd_scene load_steps=2 format=3 uid="uid://vis003"]
-
-[ext_resource type="Script" path="res://scripts/visual_script/visual_graph_editor.gd" id="1_vis"]
-
-[node name="VisualScriptEditor" type="Control"]
+[gd_scene format=3 uid="uid://visscript123"]
+[node name="VisualScripting" type="Control"]
 layout_mode = 3
 anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-script = ExtResource("1_vis")
-
-[node name="VBox" type="VBoxContainer" parent="."]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-
-[node name="TopBar" type="HBoxContainer" parent="VBox"]
-custom_minimum_size = Vector2(0, 48)
-layout_mode = 2
-
-[node name="BtnBack" type="Button" parent="VBox/TopBar"]
-layout_mode = 2
-text = "بازگشت"
-
-[node name="BtnAddEvent" type="Button" parent="VBox/TopBar"]
-layout_mode = 2
-text = "+ رویداد (OnTouch / Collision)"
-
-[node name="BtnAddAction" type="Button" parent="VBox/TopBar"]
-layout_mode = 2
-text = "+ اکشن (حرکت / نیرو)"
-
-[node name="GraphEdit" type="GraphEdit" parent="VBox"]
-layout_mode = 2
-size_flags_vertical = 3
-right_disconnects = true

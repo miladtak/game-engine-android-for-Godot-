@@ -1,71 +1,99 @@
-[gd_scene load_steps=2 format=3 uid="uid://editor002"]
+[gd_scene load_steps=5 format=3 uid="uid://editor123"]
+[ext_resource type="Script" path="res://scripts/editor/editor_controller.gd" id="1_editor"]
+[ext_resource type="Script" path="res://scripts/editor/asset_tree.gd" id="2_tree"]
+[ext_resource type="Script" path="res://scripts/visual_script/visual_graph_editor.gd" id="3_graph"]
 
-[ext_resource type="Script" path="res://scripts/editor/editor_controller.gd" id="1_edit"]
-
-[node name="Editor" type="Control"]
+[node name="EditorController" type="Control"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_edit")
+script = ExtResource("1_editor")
 
-[node name="MainLayout" type="HSplitContainer" parent="."]
+[node name="Background" type="ColorRect" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+color = Color(0.125, 0.149, 0.192, 1)
 
-[node name="LeftToolbox" type="VBoxContainer" parent="MainLayout"]
-custom_minimum_size = Vector2(220, 0)
-layout_mode = 2
-theme_override_constants/separation = 8
+[node name="MainVBox" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="ToolsLabel" type="Label" parent="MainLayout/LeftToolbox"]
-layout_mode = 2
-text = "ابزارهای بازی"
-horizontal_alignment = 1
-
-[node name="BtnAddBox" type="Button" parent="MainLayout/LeftToolbox"]
-layout_mode = 2
-text = "افزودن شیء مکعبی (Box)"
-
-[node name="BtnAddCircle" type="Button" parent="MainLayout/LeftToolbox"]
-layout_mode = 2
-text = "افزودن شیء دایره‌ای (Circle)"
-
-[node name="BtnAddLight" type="Button" parent="MainLayout/LeftToolbox"]
-layout_mode = 2
-text = "افزودن نور (Point Light)"
-
-[node name="HSeparator" type="HSeparator" parent="MainLayout/LeftToolbox"]
+[node name="TopBar" type="HBoxContainer" parent="MainVBox"]
+custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 
-[node name="BtnPlay" type="Button" parent="MainLayout/LeftToolbox"]
-layout_mode = 2
-text = "تست و اجرای بازی (Play)"
-
-[node name="BtnSave" type="Button" parent="MainLayout/LeftToolbox"]
-layout_mode = 2
-text = "ذخیره صحنه (Save)"
-
-[node name="BtnBack" type="Button" parent="MainLayout/LeftToolbox"]
-layout_mode = 2
-text = "بازگشت به منو"
-
-[node name="GameViewportContainer" type="SubViewportContainer" parent="MainLayout"]
+[node name="Title" type="Label" parent="MainVBox/TopBar"]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 20
+text = "  ⚙️ GAME ENGINE PERSIAN GULF"
+vertical_alignment = 1
+
+[node name="Tabs" type="HBoxContainer" parent="MainVBox/TopBar"]
+layout_mode = 2
+alignment = 1
+
+[node name="BtnBuild" type="Button" parent="MainVBox/TopBar/Tabs"]
+layout_mode = 2
+text = "Build"
+flat = true
+
+[node name="BtnAssets" type="Button" parent="MainVBox/TopBar/Tabs"]
+layout_mode = 2
+text = "Assets"
+flat = true
+
+[node name="BtnSettings" type="Button" parent="MainVBox/TopBar/Tabs"]
+layout_mode = 2
+text = "Settings"
+flat = true
+
+[node name="PlayModeBtn" type="Button" parent="MainVBox/TopBar"]
+layout_mode = 2
+text = " حالت بازی "
+
+[node name="MainSplit" type="HSplitContainer" parent="MainVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+split_offset = 250
+
+[node name="LeftPanel" type="PanelContainer" parent="MainVBox/MainSplit"]
+layout_mode = 2
+
+[node name="AssetTree" type="Tree" parent="MainVBox/MainSplit/LeftPanel"]
+layout_mode = 2
+script = ExtResource("2_tree")
+
+[node name="RightSplit" type="HSplitContainer" parent="MainVBox/MainSplit"]
+layout_mode = 2
+split_offset = 500
+
+[node name="ViewportPanel" type="PanelContainer" parent="MainVBox/MainSplit/RightSplit"]
+layout_mode = 2
+
+[node name="SubViewportContainer" type="SubViewportContainer" parent="MainVBox/MainSplit/RightSplit/ViewportPanel"]
+layout_mode = 2
 stretch = true
 
-[node name="SubViewport" type="SubViewport" parent="MainLayout/GameViewportContainer"]
-handle_input_locally = true
-physics_object_picking = true
-size = Vector2i(1050, 720)
-render_target_update_mode = 3
+[node name="SubViewport" type="SubViewport" parent="MainVBox/MainSplit/RightSplit/ViewportPanel/SubViewportContainer"]
+handle_input_locally = false
+size = Vector2i(500, 500)
+render_target_update_mode = 4
 
-[node name="SceneRoot" type="Node2D" parent="MainLayout/GameViewportContainer/SubViewport"]
+[node name="SceneRoot" type="Node2D" parent="MainVBox/MainSplit/RightSplit/ViewportPanel/SubViewportContainer/SubViewport"]
 
-[node name="Camera2D" type="Camera2D" parent="MainLayout/GameViewportContainer/SubViewport/SceneRoot"]
-position = Vector2(525, 360)
+[node name="GraphPanel" type="PanelContainer" parent="MainVBox/MainSplit/RightSplit"]
+layout_mode = 2
+
+[node name="VisualGraphEditor" type="GraphEdit" parent="MainVBox/MainSplit/RightSplit/GraphPanel"]
+layout_mode = 2
+script = ExtResource("3_graph")
