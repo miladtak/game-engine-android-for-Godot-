@@ -1,64 +1,42 @@
-name: Build Real Android APK and Auto Delete
+name: Build Godot Android APK
 
 on:
   workflow_dispatch:
 
 jobs:
-  build:
+  build-android:
+    # استفاده از محیط آماده‌ی گودوت برای اندروید
     runs-on: ubuntu-latest
+    container:
+      image: barichello/godot-ci:4.3-android
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-
-      - name: Generate Project Structure
         run: |
-          python generate_godot_engine.py
+          apt-get update && apt-get install -y python3
 
-      - name: Build / Compile APK Package
+      - name: Generate Project Files via Python
         run: |
-          echo "Preparing Android environment and export templates..."
+          # اجرای اسکریپت شما برای ساخت ساختار کامل پروژه گودوت
+          python3 generate_godot_engine.py
+
+      - name: Build Android APK
+        run: |
+          echo "در حال کامپایل پروژه گودوت به APK..."
           mkdir -p build
           
-          # در این بخش ساختار فایل‌های پروژه برای بسته شدن به صورت APK آماده می‌شود
-          # (اگر از ابزار کامپلاین هوش مصنوعی یا اسکریپت‌های پایتون استفاده می‌کنید خروجی در اینجا قرار می‌گیرد)
+          # اجرای موتور گودوت در حالت بدون گرافیک (Headless) برای خروجی اندروید
+          # (نکته: برای خروجی نهایی اندروید، وجود فایل تنظیمات export_presets.cfg در پروژه الزامی است)
+          godot --headless --export-release "Android" build/game_engine_output.apk
           
-          # به عنوان شبیه‌ساز ساختار واقعی APK جهت تست نهایی پکیج:
-          # (توجه: برای خروجی کامل موتور گودوت نیاز به قالب‌های اکسپورت دارد)
-          touch build/game_engine_persian_gulf.apk
-          
-          # اگر می‌خواهید مطمئن شوید حجم فایل صفر نیست و به عنوان APK شناخته می‌شود:
-          echo "PK" > build/game_engine_persian_gulf.apk
+          echo "فرآیند ساخت به پایان رسید!"
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: PersianGulf-Engine-Android6-16
-          path: build/game_engine_persian_gulf.apk
-          retention-days: 1
-
-      - name: Wait for 5 minutes (Download Window)
-        run: |
-          echo "فایل APK آماده شد! به مدت ۵ دقیقه فرصت دارید آن را دانلود کنید..."
-          sleep 300
-
-      - name: Auto Delete Artifact
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          echo "زمان گذشت. در حال حذف خودکار فایل از گیت‌هاب..."
-          REPO="${{ github.repository }}"
-          ARTIFACT_NAME="PersianGulf-Engine-Android6-16"
-          
-          ARTIFACT_ID=$(gh api repos/$REPO/actions/artifacts --jq ".artifacts[] | select(.name == \"$ARTIFACT_NAME\") | .id" | head -n 1)
-          
-          if [ -n "$ARTIFACT_ID" ]; then
-            gh api -X DELETE repos/$REPO/actions/artifacts/$ARTIFACT_ID
-            echo "فایل با موفقیت حذف شد تا فضای فورک شما پر نشود."
-          else
-            echo "فایل پیدا نشد یا از قبل حذف شده است."
-          fi
+          name: PersianGulf-Engine-Android-App
+          path: build/game_engine_output.apk
+          # فایل دیگر خودکار پاک نمی‌شود و تا زمانی که خودتان بخواهید در گیت‌هاب باقی می‌ماند
