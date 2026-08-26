@@ -37,6 +37,10 @@ size_flags_horizontal = 3
 text = "  ⚙️ GAME ENGINE PERSIAN GULF"
 vertical_alignment = 1
 
+[node name="BtnExportAPK" type="Button" parent="MainVBox/TopBar"]
+layout_mode = 2
+text = " 📦 خروجی APK "
+
 [node name="PlayModeBtn" type="Button" parent="MainVBox/TopBar"]
 layout_mode = 2
 text = " تست و اجرای بازی (Play) "
