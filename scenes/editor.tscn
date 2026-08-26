@@ -1,4 +1,4 @@
-[gd_scene load_steps=6 format=3 uid="uid://editor3d"]
+[gd_scene load_steps=6 format=3 uid="uid://editor3dpro"]
 [ext_resource type="Script" path="res://scripts/editor/editor_controller.gd" id="1_editor"]
 [ext_resource type="Script" path="res://scripts/editor/asset_tree.gd" id="2_tree"]
 [ext_resource type="Script" path="res://scripts/visual_script/visual_graph_editor.gd" id="3_graph"]
@@ -35,12 +35,12 @@ layout_mode = 2
 [node name="Title" type="Label" parent="MainVBox/TopBar"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "  🪐 GAME ENGINE PERSIAN GULF - 3D"
+text = "  🪐 GAME ENGINE PERSIAN GULF - 3D PRO"
 vertical_alignment = 1
 
 [node name="BtnExportAPK" type="Button" parent="MainVBox/TopBar"]
 layout_mode = 2
-text = " 📦 خروجی APK 3D "
+text = " 📦 خروجی APK "
 
 [node name="PlayModeBtn" type="Button" parent="MainVBox/TopBar"]
 layout_mode = 2
@@ -49,7 +49,7 @@ text = " تست و اجرای بازی (Play) "
 [node name="MainSplit" type="HSplitContainer" parent="MainVBox"]
 layout_mode = 2
 size_flags_vertical = 3
-split_offset = 220
+split_offset = 200
 dragger_visibility = 0
 
 [node name="LeftPanel" type="PanelContainer" parent="MainVBox/MainSplit"]
@@ -79,21 +79,17 @@ text = "🏃 افزودن کاراکتر 3D"
 layout_mode = 2
 text = "🟩 افزودن زمین 3D"
 
-[node name="BtnAddTouchBtn" type="Button" parent="MainVBox/MainSplit/LeftPanel/VBox"]
-layout_mode = 2
-text = "🎮 کنترل لمسی 3D"
-
 [node name="BtnSave" type="Button" parent="MainVBox/MainSplit/LeftPanel/VBox"]
 layout_mode = 2
-text = "💾 ذخیره صحنه 3D"
+text = "💾 ذخیره صحنه"
 
 [node name="BtnLoad" type="Button" parent="MainVBox/MainSplit/LeftPanel/VBox"]
 layout_mode = 2
-text = "📂 بارگذاری صحنه 3D"
+text = "📂 بارگذاری صحنه"
 
 [node name="RightSplit" type="HSplitContainer" parent="MainVBox/MainSplit"]
 layout_mode = 2
-split_offset = 380
+split_offset = 360
 dragger_visibility = 0
 
 [node name="ViewportPanel" type="PanelContainer" parent="MainVBox/MainSplit/RightSplit"]
@@ -105,7 +101,7 @@ stretch = true
 
 [node name="SubViewport" type="SubViewport" parent="MainVBox/MainSplit/RightSplit/ViewportPanel/SubViewportContainer"]
 handle_input_locally = false
-size = Vector2i(380, 600)
+size = Vector2i(360, 600)
 render_target_update_mode = 4
 
 [node name="SceneRoot" type="Node3D" parent="MainVBox/MainSplit/RightSplit/ViewportPanel/SubViewportContainer/SubViewport"]
@@ -126,7 +122,7 @@ layout_mode = 2
 
 [node name="TitleLbl" type="Label" parent="MainVBox/MainSplit/RightSplit/InspectorPanel/VBox"]
 layout_mode = 2
-text = "🪐 تنظیمات آبجکت 3D"
+text = "🛠️ تنظیمات پیشرفته 3D"
 horizontal_alignment = 1
 
 [node name="HSeparator" type="HSeparator" parent="MainVBox/MainSplit/RightSplit/InspectorPanel/VBox"]
@@ -134,20 +130,66 @@ layout_mode = 2
 
 [node name="LblX" type="Label" parent="MainVBox/MainSplit/RightSplit/InspectorPanel/VBox"]
 layout_mode = 2
-text = "موقعیت افقی (X):"
+text = "موقعیت X:"
 
 [node name="InputPosX" type="LineEdit" parent="MainVBox/MainSplit/RightSplit/InspectorPanel/VBox"]
 layout_mode = 2
 text = "0"
 
+[node name="LblY" type="Label" parent="MainVBox/MainSplit/RightSplit/InspectorPanel/VBox"]
+layout_mode = 2
+text = "موقعیت Y (ارتفاع):"
+
+[node name="InputPosY" type="LineEdit" parent="MainVBox/MainSplit/RightSplit/InspectorPanel/VBox"]
+layout_mode = 2
+text = "0"
+
 [node name="LblZ" type="Label" parent="MainVBox/MainSplit/RightSplit/InspectorPanel/VBox"]
 layout_mode = 2
-text = "موقعیت عمقی (Z):"
+text = "موقعیت Z:"
 
 [node name="InputPosZ" type="LineEdit" parent="MainVBox/MainSplit/RightSplit/InspectorPanel/VBox"]
 layout_mode = 2
 text = "0"
 
+[node name="HSeparator2" type="HSeparator" parent="MainVBox/MainSplit/RightSplit/InspectorPanel/VBox"]
+layout_mode = 2
+
+[node name="LblScaleX" type="Label" parent="MainVBox/MainSplit/RightSplit/InspectorPanel/VBox"]
+layout_mode = 2
+text = "پهنا (Scale X):"
+
+[node name="InputScaleX" type="LineEdit" parent="MainVBox/MainSplit/RightSplit/InspectorPanel/VBox"]
+layout_mode = 2
+text = "1"
+
+[node name="LblScaleY" type="Label" parent="MainVBox/MainSplit/RightSplit/InspectorPanel/VBox"]
+layout_mode = 2
+text = "ارتفاع/درازای عمودی (Scale Y):"
+
+[node name="InputScaleY" type="LineEdit" parent="MainVBox/MainSplit/RightSplit/InspectorPanel/VBox"]
+layout_mode = 2
+text = "1"
+
+[node name="LblScaleZ" type="Label" parent="MainVBox/MainSplit/RightSplit/InspectorPanel/VBox"]
+layout_mode = 2
+text = "عمق (Scale Z):"
+
+[node name="InputScaleZ" type="LineEdit" parent="MainVBox/MainSalit/RightSplit/InspectorPanel/VBox"]
+layout_mode = 2
+text = "1"
+
+[node name="HSeparator3" type="HSeparator" parent="MainVBox/MainSplit/RightSplit/InspectorPanel/VBox"]
+layout_mode = 2
+
+[node name="LblRotY" type="Label" parent="MainVBox/MainSplit/RightSplit/InspectorPanel/VBox"]
+layout_mode = 2
+text = "چرخش افقی (Rotation Y):"
+
+[node name="InputRotY" type="LineEdit" parent="MainVBox/MainSplit/RightSplit/InspectorPanel/VBox"]
+layout_mode = 2
+text = "0"
+
 [node name="BtnApplyProps" type="Button" parent="MainVBox/MainSplit/RightSplit/InspectorPanel/VBox"]
 layout_mode = 2
-text = "اعمال مختصات 3D"
+text = "اعمال تغییرات (موقعیت، سایز، چرخش)"

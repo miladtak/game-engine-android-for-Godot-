@@ -1,7 +1,7 @@
 extends Node
 
-var current_project_name: String = "My3DGame"
-var current_project_path: String = "user://projects/My3DGame/"
+var current_project_name: String = "My3DGamePro"
+var current_project_path: String = "user://projects/My3DGamePro/"
 var current_scene_data: Dictionary = {
 	"objects": [],
 	"camera": {"fov": 75.0},
