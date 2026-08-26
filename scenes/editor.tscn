@@ -175,7 +175,7 @@ text = "1"
 layout_mode = 2
 text = "عمق (Scale Z):"
 
-[node name="InputScaleZ" type="LineEdit" parent="MainVBox/MainSalit/RightSplit/InspectorPanel/VBox"]
+[node name="InputScaleZ" type="LineEdit" parent="MainVBox/MainSplit/RightSplit/InspectorPanel/VBox"]
 layout_mode = 2
 text = "1"
 
@@ -188,7 +188,7 @@ text = "چرخش افقی (Rotation Y):"
 
 [node name="InputRotY" type="LineEdit" parent="MainVBox/MainSplit/RightSplit/InspectorPanel/VBox"]
 layout_mode = 2
-text = "0"
+text/text = "0"
 
 [node name="BtnApplyProps" type="Button" parent="MainVBox/MainSplit/RightSplit/InspectorPanel/VBox"]
 layout_mode = 2

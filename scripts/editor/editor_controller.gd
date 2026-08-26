@@ -15,7 +15,6 @@ extends Control
 @onready var btn_load: Button = $MainVBox/MainSplit/LeftPanel/VBox/BtnLoad
 @onready var asset_tree: Tree = $MainVBox/MainSplit/LeftPanel/VBox/AssetTree
 
-# فیلدهای پیشرفته اینسپکتور (موقعیت، مقیاس و چرخش)
 @onready var input_pos_x: LineEdit = $MainVBox/MainSplit/RightSplit/InspectorPanel/VBox/InputPosX
 @onready var input_pos_y: LineEdit = $MainVBox/MainSplit/RightSplit/InspectorPanel/VBox/InputPosY
 @onready var input_pos_z: LineEdit = $MainVBox/MainSplit/RightSplit/InspectorPanel/VBox/InputPosZ
@@ -44,7 +43,6 @@ func _input(event: InputEvent) -> void:
 	if Global.is_playing_preview:
 		return
 		
-	# سیستم انتخاب هوشمند سه‌بعدی: هر شیء یا زمینی که لمس کنید انتخاب می‌شود
 	if event is InputEventScreenTouch:
 		if event.pressed:
 			selected_node = null
@@ -56,7 +54,7 @@ func _input(event: InputEvent) -> void:
 					if camera:
 						var screen_pos = camera.unproject_position(child.global_position)
 						var dist = screen_pos.distance_to(event.position)
-						if dist < min_dist and dist < 140.0: # محدوده تشخیص لمس روی آبجکت
+						if dist < min_dist and dist < 140.0:
 							min_dist = dist
 							closest_node = child
 							
@@ -64,7 +62,6 @@ func _input(event: InputEvent) -> void:
 				selected_node = closest_node
 				is_dragging = true
 				populate_inspector()
-				print("آبجکت انتخاب شد: ", selected_node.name)
 		else:
 			is_dragging = false
 			
@@ -85,70 +82,57 @@ func populate_inspector() -> void:
 		if input_rot_y: input_rot_y.text = str(snapped(selected_node.rotation_degrees.y, 0.1))
 
 func _process(_delta: float) -> void:
-	if Global.is_playing_preview:
-		pass
+	pass
 
 func _on_add_3d_box() -> void:
 	var body = RigidBody3D.new()
 	body.name = "Box3D_" + str(randi() % 1000)
-	
 	var mesh_inst = MeshInstance3D.new()
 	var box_mesh = BoxMesh.new()
 	box_mesh.size = Vector3(1.5, 1.5, 1.5)
 	mesh_inst.mesh = box_mesh
-	
 	var col = CollisionShape3D.new()
 	var shape = BoxShape3D.new()
 	shape.size = Vector3(1.5, 1.5, 1.5)
 	col.shape = shape
-	
 	body.add_child(mesh_inst)
 	body.add_child(col)
 	body.position = Vector3(randf_range(-2, 2), 3, randf_range(-2, 2))
 	scene_root.add_child(body)
-	print("📦 مکعب سه‌بعدی اضافه شد.")
 
 func _on_add_3d_player() -> void:
 	var player = CharacterBody3D.new()
 	player.name = "Player3D_" + str(randi() % 1000)
-	
 	var mesh_inst = MeshInstance3D.new()
 	var capsule = CapsuleMesh.new()
 	capsule.radius = 0.5
 	capsule.height = 2.0
 	mesh_inst.mesh = capsule
-	
 	var col = CollisionShape3D.new()
 	var shape = CapsuleShape3D.new()
 	shape.radius = 0.5
 	shape.height = 2.0
 	col.shape = shape
-	
 	player.add_child(mesh_inst)
 	player.add_child(col)
 	player.position = Vector3(0, 2, 0)
 	scene_root.add_child(player)
-	print("🏃 کاراکتر سه‌بعدی اضافه شد.")
 
 func _on_add_3d_ground() -> void:
 	var ground = StaticBody3D.new()
 	ground.name = "Ground3D_" + str(randi() % 1000)
-	
 	var mesh_inst = MeshInstance3D.new()
 	var plane = BoxMesh.new()
 	plane.size = Vector3(6.0, 0.4, 6.0)
 	mesh_inst.mesh = plane
-	
 	var col = CollisionShape3D.new()
 	var shape = BoxShape3D.new()
 	shape.size = Vector3(6.0, 0.4, 6.0)
 	col.shape = shape
-	
 	ground.add_child(mesh_inst)
 	ground.add_child(col)
 	ground.position = Vector3(0, 0, 0)
 	scene_root.add_child(ground)
-	print("🟩 زمین سه‌بعدی اضافه شد.")
 
 func _on_toggle_play_mode() -> void:
 	Global.is_playing_preview = not Global.is_playing_preview
@@ -185,8 +169,6 @@ func _on_apply_properties() -> void:
 		
 		var ry = input_rot_y.text.to_float()
 		selected_node.rotation_degrees = Vector3(0, ry, 0)
-		
-		print("تغییرات ابعاد، موقعیت و چرخش اعمال شد.")
 
 func _on_save_project() -> void:
 	var objects_data: Array = []
@@ -202,8 +184,7 @@ func _on_save_project() -> void:
 				"scale_z": child.scale.z,
 				"rot_y": child.rotation_degrees.y
 			})
-	if Global.save_project(objects_data):
-		print("صحنه سه‌بعدی با موفقیت ذخیره شد!")
+	Global.save_project(objects_data)
 
 func _on_load_project() -> void:
 	var loaded_objects = Global.load_project()
@@ -227,5 +208,3 @@ func _on_load_project() -> void:
 			node.global_position = Vector3(obj_data.get("pos_x", 0), obj_data.get("pos_y", 0), obj_data.get("pos_z", 0))
 			node.scale = Vector3(obj_data.get("scale_x", 1), obj_data.get("scale_y", 1), obj_data.get("scale_z", 1))
 			node.rotation_degrees = Vector3(0, obj_data.get("rot_y", 0), 0)
-			
-	print("صحنه سه‌بعدی با موفقیت بارگذاری شد!")
