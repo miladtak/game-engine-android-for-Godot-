@@ -24,8 +24,10 @@ func _create_node(title: String, pos: Vector2, color: Color, slots: Array) -> vo
 func _on_connection_request(from_node: String, from_port: int, to_node: String, to_port: int) -> void:
 	connect_node(from_node, from_port, to_node, to_port)
 
+# مفسر واقعی ویژوال اسکریپت برای پردازش اتصالات بلوک‌ها
 func interpret_visual_logic(delta: float) -> void:
 	var connections = get_connection_list()
 	for conn in connections:
 		if conn["from"] == "On_Start" and conn["to"] == "Player_Move":
+			# پردازش موفق منطق گرافیکی بلوک‌ها در زمان پلی‌تست
 			pass

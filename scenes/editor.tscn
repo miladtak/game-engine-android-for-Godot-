@@ -154,6 +154,10 @@ text = "ارتفاع (Height):"
 layout_mode = 2
 text = "64"
 
+[node name="InputColorR" type="LineEdit" parent="MainVBox/MainSplit/RightSplit/InspectorPanel/VBox"]
+visible = false
+layout_mode = 2
+
 [node name="BtnApplyProps" type="Button" parent="MainVBox/MainSplit/RightSplit/InspectorPanel/VBox"]
 layout_mode = 2
 text = "اعمال تغییرات"

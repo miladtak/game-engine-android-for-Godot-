@@ -13,11 +13,14 @@ extends Control
 @onready var btn_add_touch_btn: Button = $MainVBox/MainSplit/LeftPanel/VBox/BtnAddTouchBtn
 @onready var btn_save: Button = $MainVBox/MainSplit/LeftPanel/VBox/BtnSave
 @onready var btn_load: Button = $MainVBox/MainSplit/LeftPanel/VBox/BtnLoad
+@onready var asset_tree: Tree = $MainVBox/MainSplit/LeftPanel/VBox/AssetTree
 
+# فیلدهای اینسپکتور پیشرفته (موقعیت، سایز و رنگ)
 @onready var input_pos_x: LineEdit = $MainVBox/MainSplit/RightSplit/InspectorPanel/VBox/InputPosX
 @onready var input_pos_y: LineEdit = $MainVBox/MainSplit/RightSplit/InspectorPanel/VBox/InputPosY
 @onready var input_size_w: LineEdit = $MainVBox/MainSplit/RightSplit/InspectorPanel/VBox/InputSizeW
 @onready var input_size_h: LineEdit = $MainVBox/MainSplit/RightSplit/InspectorPanel/VBox/InputSizeH
+@onready var input_color_r: LineEdit = $MainVBox/MainSplit/RightSplit/InspectorPanel/VBox/InputColorR
 @onready var btn_apply_props: Button = $MainVBox/MainSplit/RightSplit/InspectorPanel/VBox/BtnApplyProps
 
 var selected_node: Node = null
@@ -37,6 +40,10 @@ func _ready() -> void:
 	if btn_save: btn_save.pressed.connect(_on_save_project)
 	if btn_load: btn_load.pressed.connect(_on_load_project)
 	if btn_apply_props: btn_apply_props.pressed.connect(_on_apply_properties)
+	
+	# اتصال سیگنال کلیک فایل از منوی درختی
+	if asset_tree and asset_tree.has_signal("file_selected"):
+		asset_tree.file_selected.connect(_on_file_selected_from_tree)
 
 func _input(event: InputEvent) -> void:
 	if Global.is_playing_preview:
@@ -60,6 +67,10 @@ func _input(event: InputEvent) -> void:
 					if child is Node2D and input_pos_x and input_pos_y:
 						input_pos_x.text = str(int(child.global_position.x))
 						input_pos_y.text = str(int(child.global_position.y))
+						var vis = child.get_node_or_null("Visual")
+						if vis and vis is ColorRect:
+							input_size_w.text = str(int(vis.size.x))
+							input_size_h.text = str(int(vis.size.y))
 					break
 		else:
 			is_dragging = false
@@ -75,6 +86,7 @@ func _input(event: InputEvent) -> void:
 
 func _process(delta: float) -> void:
 	if Global.is_playing_preview:
+		# اجرای مفسر ویژوال اسکریپت برای کنترل منطق بلوک‌ها
 		var graph_editor = get_node_or_null("../MainVBox/MainSplit/RightSplit/GraphPanel/VisualGraphEditor")
 		if graph_editor and graph_editor.has_method("interpret_visual_logic"):
 			graph_editor.interpret_visual_logic(delta)
@@ -89,6 +101,11 @@ func _process(delta: float) -> void:
 						child.velocity.y = -480.0
 						touch_jump_triggered = false
 				child.move_and_slide()
+
+func _on_file_selected_from_tree(file_name: String) -> void:
+	print("فایل انتخاب‌شده از منو بارگذاری شد: ", file_name)
+	if file_name == "Main Level":
+		_on_load_project()
 
 func _on_toggle_play_mode() -> void:
 	Global.is_playing_preview = not Global.is_playing_preview
@@ -114,7 +131,10 @@ func _on_export_apk_clicked() -> void:
 func _on_apply_properties() -> void:
 	if selected_node != null and selected_node is Node2D:
 		selected_node.global_position = Vector2(input_pos_x.text.to_float(), input_pos_y.text.to_float())
-		print("تنظیمات آبجکت اعمال شد.")
+		var vis = selected_node.get_node_or_null("Visual")
+		if vis and vis is ColorRect:
+			vis.size = Vector2(input_size_w.text.to_float(), input_size_h.text.to_float())
+		print("تنظیمات پیشرفته آبجکت با موفقیت اعمال شد.")
 
 func _on_add_box() -> void:
 	var body = RigidBody2D.new()

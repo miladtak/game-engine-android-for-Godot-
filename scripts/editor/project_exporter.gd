@@ -17,7 +17,7 @@ func export_project_to_storage(project_path: String, scene_data: Dictionary) -> 
 		return true
 	return false
 
-# سیستم کامپایل خروجی APK برای اندروید
+# سیستم کامپایل خروجی APK برای اندروید با اتصال به تانل ابزارهای اکسپورت
 func build_android_apk() -> void:
 	print("📦 در حال کامپایل نهایی پروژه به صورت APK اندروید...")
 	var export_path = "user://exported_game.apk"
