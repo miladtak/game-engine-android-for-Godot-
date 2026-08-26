@@ -1,0 +1,38 @@
+name: Auto Generate Tree
+
+on:
+  push:
+    branches: [ main, master ]  # یا هر شاخه دیگری که استفاده می‌کنید
+  workflow_dispatch:  # اجازه اجرای دستی از طریق دکمه
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # برای commit کردن تغییرات نیاز است
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # برای دسترسی به تاریخچه کامل
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Generate Tree
+      run: python generate_tree.py
+
+    - name: Commit and push if changed
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add docs/tree/
+        if git diff --staged --quiet; then
+          echo "No changes to commit"
+        else
+          git commit -m "Auto-update project tree [skip ci]"
+          git push
+        fi
