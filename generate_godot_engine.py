@@ -1,6 +1,6 @@
 import os
 
-# ساختار کامل و پیشرفته موتور بازی‌ساز (نسخه نهایی همراه با آبجکت‌های پیش‌فرض و پنل‌های کشویی)
+# ساختار کامل و هوشمند موتور بازی‌ساز (همراه با قابلیت افزونه دکمه‌های لمسی)
 project_files = {
     "project.godot": """config_version=5
 
@@ -88,43 +88,73 @@ func export_project_to_storage(project_path: String, scene_data: Dictionary) -> 
 @onready var scene_root: Node2D = $MainVBox/MainSplit/RightSplit/ViewportPanel/SubViewportContainer/SubViewport/SceneRoot
 @onready var play_mode_btn: Button = $MainVBox/TopBar/PlayModeBtn
 
-# دکمه‌های ابزار
+# دکمه‌های ابزار (شامل پلاگین کنترل لمسی)
 @onready var btn_add_box: Button = $MainVBox/MainSplit/LeftPanel/VBox/BtnAddBox
 @onready var btn_add_player: Button = $MainVBox/MainSplit/LeftPanel/VBox/BtnAddPlayer
 @onready var btn_add_ground: Button = $MainVBox/MainSplit/LeftPanel/VBox/BtnAddGround
+@onready var btn_add_touch_btn: Button = $MainVBox/MainSplit/LeftPanel/VBox/BtnAddTouchBtn
 @onready var btn_save: Button = $MainVBox/MainSplit/LeftPanel/VBox/BtnSave
 
-var selected_node: Node2D = null
+var selected_node: Node = null
 var is_dragging: bool = false
 var drag_offset: Vector2 = Vector2.ZERO
+
+var touch_input_dir: float = 0.0
+var touch_jump_triggered: bool = false
 
 func _ready() -> void:
 	if play_mode_btn: play_mode_btn.pressed.connect(_on_toggle_play_mode)
 	if btn_add_box: btn_add_box.pressed.connect(_on_add_box)
 	if btn_add_player: btn_add_player.pressed.connect(_on_add_player)
 	if btn_add_ground: btn_add_ground.pressed.connect(_on_add_ground)
+	if btn_add_touch_btn: btn_add_touch_btn.pressed.connect(_on_add_touch_button)
 	if btn_save: btn_save.pressed.connect(_on_save_project)
 
 func _input(event: InputEvent) -> void:
 	if Global.is_playing_preview:
 		return
 		
+	# جابه‌جایی تعاملی بصری اشیاء و دکمه‌های لمسی در ادیتور با لمس گوشی
 	if event is InputEventScreenTouch:
 		if event.pressed:
+			selected_node = null
 			for child in scene_root.get_children():
+				var child_pos = Vector2.ZERO
 				if child is Node2D:
-					if event.position.distance_to(child.global_position) < 60.0:
-						selected_node = child
-						is_dragging = true
-						drag_offset = child.global_position - event.position
-						break
+					child_pos = child.global_position
+				elif child is Control:
+					child_pos = child.global_position + (child.size / 2)
+					
+				if event.position.distance_to(child_pos) < 70.0:
+					selected_node = child
+					is_dragging = true
+					drag_offset = child_pos - event.position
+					break
 		else:
 			is_dragging = false
 			selected_node = null
 			
 	elif event is InputEventScreenDrag and is_dragging:
 		if selected_node != null:
-			selected_node.global_position = event.position + drag_offset
+			if selected_node is Node2D:
+				selected_node.global_position = event.position + drag_offset
+			elif selected_node is Control:
+				selected_node.global_position = event.position + drag_offset - (selected_node.size / 2)
+
+func _process(delta: float) -> void:
+	if Global.is_playing_preview:
+		for child in scene_root.get_children():
+			if child.name == "PlayerCharacter" and child is CharacterBody2D:
+				child.velocity.x = touch_input_dir * 260.0
+				
+				if not child.is_on_floor():
+					child.velocity.y += 980.0 * delta
+				else:
+					if touch_jump_triggered:
+						child.velocity.y = -480.0
+						touch_jump_triggered = false
+				
+				child.move_and_slide()
 
 func _on_add_box() -> void:
 	var body = RigidBody2D.new()
@@ -145,7 +175,6 @@ func _on_add_box() -> void:
 	scene_root.add_child(body)
 
 func _on_add_player() -> void:
-	# ساخت کاراکتر با فیزیک دوبعدی (CharacterBody2D)
 	var player = CharacterBody2D.new()
 	player.name = "PlayerCharacter"
 	
@@ -158,16 +187,14 @@ func _on_add_player() -> void:
 	var visual = ColorRect.new()
 	visual.size = Vector2(32, 48)
 	visual.position = Vector2(-16, -24)
-	visual.color = Color(0.9, 0.3, 0.3) # رنگ متمایز برای کاراکتر
+	visual.color = Color(0.9, 0.3, 0.3)
 	
 	player.add_child(visual)
 	player.add_child(col)
 	player.position = Vector2(400, 200)
 	scene_root.add_child(player)
-	print("کاراکتر با قابلیت فیزیک اضافه شد.")
 
 func _on_add_ground() -> void:
-	# ساخت زمین ثابت (StaticBody2D)
 	var ground = StaticBody2D.new()
 	ground.name = "GroundPlatform"
 	
@@ -179,13 +206,34 @@ func _on_add_ground() -> void:
 	var visual = ColorRect.new()
 	visual.size = Vector2(400, 48)
 	visual.position = Vector2(-200, -24)
-	visual.color = Color(0.3, 0.8, 0.3) # رنگ سبز برای زمین
+	visual.color = Color(0.3, 0.8, 0.3)
 	
 	ground.add_child(visual)
 	ground.add_child(col)
 	ground.position = Vector2(400, 450)
 	scene_root.add_child(ground)
-	print("زمین بازی اضافه شد.")
+
+func _on_add_touch_button() -> void:
+	var touch_panel = Panel.new()
+	touch_panel.name = "TouchControlButton"
+	touch_panel.size = Vector2(80, 80)
+	touch_panel.position = Vector2(100, 350)
+	
+	var btn = Button.new()
+	btn.text = "⬆️ پرش"
+	btn.size = Vector2(80, 80)
+	
+	btn.button_down.connect(func(): 
+		touch_jump_triggered = true
+		touch_input_dir = 1.0
+	)
+	btn.button_up.connect(func(): 
+		touch_input_dir = 0.0
+	)
+	
+	touch_panel.add_child(btn)
+	scene_root.add_child(touch_panel)
+	print("پلاگین دکمه لمسی اضافه شد.")
 
 func _on_toggle_play_mode() -> void:
 	Global.is_playing_preview = not Global.is_playing_preview
@@ -222,6 +270,18 @@ func _create_folder(parent: TreeItem, folder_name: String, files: Array) -> void
 	for file in files:
 		var file_item = create_item(folder)
 		file_item.set_text(0, file)
+""",
+
+    "scripts/editor/touch_editor_controls.gd": """extends Control
+pass
+""",
+
+    "scripts/autoload/locale_manager.gd": """extends Node
+pass
+""",
+
+    "scripts/editor/main_menu.gd": """extends Control
+pass
 """,
 
     "scripts/visual_script/visual_graph_editor.gd": """extends GraphEdit
@@ -325,6 +385,10 @@ text = "🏃 افزودن کاراکتر"
 layout_mode = 2
 text = "🟩 افزودن زمین"
 
+[node name="BtnAddTouchBtn" type="Button" parent="MainVBox/MainSplit/LeftPanel/VBox"]
+layout_mode = 2
+text = "🎮 افزودن کنترل لمسی"
+
 [node name="BtnSave" type="Button" parent="MainVBox/MainSplit/LeftPanel/VBox"]
 layout_mode = 2
 text = "💾 ذخیره پروژه"
@@ -370,15 +434,15 @@ anchors_preset = 15
 }
 
 def build_project():
-    print("🚀 در حال بازسازی موتور بازی‌ساز (Game Engine Persian Gulf)...")
+    print("🚀 در حال ساخت و به‌روزرسانی موتور بازی‌ساز (Game Engine Persian Gulf)...")
     for file_path, content in project_files.items():
         directory = os.path.dirname(file_path)
         if directory:
             os.makedirs(directory, exist_ok=True)
         with open(file_path, "w", encoding="utf-8") as f:
             f.write(content)
-        print(f"✔️ آپدیت شد: {file_path}")
-    print("\\n✅ پروژه با موفقیت به‌روزرسانی شد!")
+        print(f"✔️ فایل اعمال شد: {file_path}")
+    print("\\n✅ تمام بخش‌ها، دکمه‌ها و کدهای جدید با موفقیت ساخته شدند!")
 
 if __name__ == "__main__":
     build_project()
