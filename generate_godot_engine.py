@@ -1,12 +1,12 @@
 import os
 
-# ساختار کامل فایل‌ها و کدهای موتور بازی‌ساز
+# ساختار کامل و پیشرفته موتور بازی‌ساز (نسخه نهایی همراه با آبجکت‌های پیش‌فرض و پنل‌های کشویی)
 project_files = {
     "project.godot": """config_version=5
 
 [application]
 config/name="Game Engine Persian Gulf"
-run/main_scene="res://scenes/main_menu.tscn"
+run/main_scene="res://scenes/editor.tscn"
 config/features=PackedStringArray("4.7", "Forward Plus")
 
 [autoload]
@@ -28,11 +28,9 @@ var current_scene_data: Dictionary = {
 	"physics": {"gravity": 980.0}
 }
 var is_playing_preview: bool = false
-
 var exporter: Node
 
 func _ready() -> void:
-	# Load ProjectExporter dynamically to avoid cyclic parsing issues
 	var exporter_script = load("res://scripts/editor/project_exporter.gd")
 	if exporter_script:
 		exporter = exporter_script.new()
@@ -69,12 +67,10 @@ func load_project(proj_name: String) -> bool:
     "scripts/editor/project_exporter.gd": """extends Node
 class_name ProjectExporter
 
-# ذخیره‌سازی داده‌های صحنه روی پوشه مشخص شده در حافظه دستگاه
 func export_project_to_storage(project_path: String, scene_data: Dictionary) -> bool:
 	if not DirAccess.dir_exists_absolute(project_path):
 		var err = DirAccess.make_dir_recursive_absolute(project_path)
 		if err != OK:
-			print("خطا در ایجاد پوشه پروژه: ", err)
 			return false
 	
 	var file_path = project_path + "project_data.json"
@@ -83,11 +79,8 @@ func export_project_to_storage(project_path: String, scene_data: Dictionary) -> 
 		var json_string = JSON.stringify(scene_data, "\\t")
 		file.store_string(json_string)
 		file.close()
-		print("پروژه با موفقیت ذخیره شد: ", file_path)
 		return true
-	else:
-		print("خطا در باز کردن فایل ذخیره! کد خطا: ", FileAccess.get_open_error())
-		return false
+	return false
 """,
 
     "scripts/editor/editor_controller.gd": """extends Control
@@ -95,83 +88,154 @@ func export_project_to_storage(project_path: String, scene_data: Dictionary) -> 
 @onready var scene_root: Node2D = $MainVBox/MainSplit/RightSplit/ViewportPanel/SubViewportContainer/SubViewport/SceneRoot
 @onready var play_mode_btn: Button = $MainVBox/TopBar/PlayModeBtn
 
+# دکمه‌های ابزار
+@onready var btn_add_box: Button = $MainVBox/MainSplit/LeftPanel/VBox/BtnAddBox
+@onready var btn_add_player: Button = $MainVBox/MainSplit/LeftPanel/VBox/BtnAddPlayer
+@onready var btn_add_ground: Button = $MainVBox/MainSplit/LeftPanel/VBox/BtnAddGround
+@onready var btn_save: Button = $MainVBox/MainSplit/LeftPanel/VBox/BtnSave
+
+var selected_node: Node2D = null
+var is_dragging: bool = false
+var drag_offset: Vector2 = Vector2.ZERO
+
 func _ready() -> void:
-	if play_mode_btn:
-		play_mode_btn.pressed.connect(_on_toggle_play_mode)
+	if play_mode_btn: play_mode_btn.pressed.connect(_on_toggle_play_mode)
+	if btn_add_box: btn_add_box.pressed.connect(_on_add_box)
+	if btn_add_player: btn_add_player.pressed.connect(_on_add_player)
+	if btn_add_ground: btn_add_ground.pressed.connect(_on_add_ground)
+	if btn_save: btn_save.pressed.connect(_on_save_project)
+
+func _input(event: InputEvent) -> void:
+	if Global.is_playing_preview:
+		return
+		
+	if event is InputEventScreenTouch:
+		if event.pressed:
+			for child in scene_root.get_children():
+				if child is Node2D:
+					if event.position.distance_to(child.global_position) < 60.0:
+						selected_node = child
+						is_dragging = true
+						drag_offset = child.global_position - event.position
+						break
+		else:
+			is_dragging = false
+			selected_node = null
+			
+	elif event is InputEventScreenDrag and is_dragging:
+		if selected_node != null:
+			selected_node.global_position = event.position + drag_offset
+
+func _on_add_box() -> void:
+	var body = RigidBody2D.new()
+	var col = CollisionShape2D.new()
+	var shape = RectangleShape2D.new()
+	shape.size = Vector2(64, 64)
+	col.shape = shape
+	
+	var visual = ColorRect.new()
+	visual.size = Vector2(64, 64)
+	visual.position = Vector2(-32, -32)
+	visual.color = Color(0.2, 0.6, 0.9)
+	
+	body.add_child(visual)
+	body.add_child(col)
+	body.position = Vector2(400, 150)
+	body.freeze = not Global.is_playing_preview
+	scene_root.add_child(body)
+
+func _on_add_player() -> void:
+	# ساخت کاراکتر با فیزیک دوبعدی (CharacterBody2D)
+	var player = CharacterBody2D.new()
+	player.name = "PlayerCharacter"
+	
+	var col = CollisionShape2D.new()
+	var shape = CapsuleShape2D.new()
+	shape.radius = 16.0
+	shape.height = 48.0
+	col.shape = shape
+	
+	var visual = ColorRect.new()
+	visual.size = Vector2(32, 48)
+	visual.position = Vector2(-16, -24)
+	visual.color = Color(0.9, 0.3, 0.3) # رنگ متمایز برای کاراکتر
+	
+	player.add_child(visual)
+	player.add_child(col)
+	player.position = Vector2(400, 200)
+	scene_root.add_child(player)
+	print("کاراکتر با قابلیت فیزیک اضافه شد.")
+
+func _on_add_ground() -> void:
+	# ساخت زمین ثابت (StaticBody2D)
+	var ground = StaticBody2D.new()
+	ground.name = "GroundPlatform"
+	
+	var col = CollisionShape2D.new()
+	var shape = RectangleShape2D.new()
+	shape.size = Vector2(400, 48)
+	col.shape = shape
+	
+	var visual = ColorRect.new()
+	visual.size = Vector2(400, 48)
+	visual.position = Vector2(-200, -24)
+	visual.color = Color(0.3, 0.8, 0.3) # رنگ سبز برای زمین
+	
+	ground.add_child(visual)
+	ground.add_child(col)
+	ground.position = Vector2(400, 450)
+	scene_root.add_child(ground)
+	print("زمین بازی اضافه شد.")
 
 func _on_toggle_play_mode() -> void:
 	Global.is_playing_preview = not Global.is_playing_preview
-	
 	if Global.is_playing_preview:
-		play_mode_btn.text = " توقف بازی "
-		play_mode_btn.modulate = Color(1, 0.4, 0.4) # رنگ قرمز
+		play_mode_btn.text = " توقف بازی (Stop) "
+		play_mode_btn.modulate = Color(1, 0.4, 0.4)
 	else:
-		play_mode_btn.text = " حالت بازی "
-		play_mode_btn.modulate = Color(1, 1, 1) # رنگ پیش‌فرض
+		play_mode_btn.text = " تست و اجرای بازی (Play) "
+		play_mode_btn.modulate = Color(1, 1, 1)
 		
-	# اعمال فیزیک به اشیاء داخل صحنه
 	for child in scene_root.get_children():
 		if child is RigidBody2D:
 			child.freeze = not Global.is_playing_preview
+
+func _on_save_project() -> void:
+	if Global.save_project():
+		print("پروژه با موفقیت ذخیره شد.")
 """,
 
     "scripts/editor/asset_tree.gd": """extends Tree
 
 func _ready() -> void:
-	# پیکربندی ظاهر درختی
 	hide_root = true
 	var root = create_item()
-	
-	# ساخت ساختار پوشه‌های موتور
 	_create_folder(root, "Scenes", ["Main Level", "Start Screen"])
 	_create_folder(root, "Scripts", ["PlayerControl", "AIBehavior"])
 	_create_folder(root, "Textures", ["CharacterSprites", "Environment"])
 	_create_folder(root, "Sound", ["BGM", "SFX"])
-	_create_folder(root, "Plugins", ["AI_Behavior_Pack", "Cutscene_Creator"])
 	_create_folder(root, "Items", ["Item_Bag", "Item_Type"])
 
 func _create_folder(parent: TreeItem, folder_name: String, files: Array) -> void:
 	var folder = create_item(parent)
 	folder.set_text(0, folder_name)
-	
 	for file in files:
 		var file_item = create_item(folder)
 		file_item.set_text(0, file)
 """,
 
-    "scripts/editor/touch_editor_controls.gd": """extends Control
-# فایل پشتیبان برای کنترل‌های لمسی پیشرفته در آینده
-pass
-""",
-
-    "scripts/autoload/locale_manager.gd": """extends Node
-# مدیریت زبان‌ها (فارسی / انگلیسی)
-pass
-""",
-
-    "scripts/editor/main_menu.gd": """extends Control
-# اسکریپت منوی اصلی
-pass
-""",
-
     "scripts/visual_script/visual_graph_editor.gd": """extends GraphEdit
 
 func _ready() -> void:
-	# تنظیمات گراف
 	right_disconnects = true
 	connection_request.connect(_on_connection_request)
-	
-	# ساخت چند بلوک تستی شبیه عکس
 	_create_node("On_Start", Vector2(40, 40), Color(0.2, 0.5, 0.8), ["Flow Out"])
-	_create_node("Variable: Player_Object", Vector2(80, 120), Color(0.3, 0.4, 0.7), ["Flow In", "Flow Out"])
-	_create_node("Get_Item", Vector2(40, 300), Color(0.4, 0.5, 0.9), ["Flow In", "تعداد آیتم Out"])
+	_create_node("Player_Move", Vector2(40, 220), Color(0.8, 0.4, 0.2), ["Flow In", "Flow Out"])
 
 func _create_node(title: String, pos: Vector2, color: Color, slots: Array) -> void:
 	var node = GraphNode.new()
 	node.title = title
 	node.position_offset = pos
-	
-	# ساخت پورت‌های ورودی و خروجی برای سیم‌کشی
 	var idx = 0
 	for slot_name in slots:
 		var lbl = Label.new()
@@ -181,7 +245,6 @@ func _create_node(title: String, pos: Vector2, color: Color, slots: Array) -> vo
 		var is_out = slot_name.contains("Out")
 		node.set_slot(idx, is_in, 0, color, is_out, 0, color)
 		idx += 1
-		
 	add_child(node)
 
 func _on_connection_request(from_node: String, from_port: int, to_node: String, to_port: int) -> void:
@@ -218,54 +281,58 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="TopBar" type="HBoxContainer" parent="MainVBox"]
-custom_minimum_size = Vector2(0, 50)
+custom_minimum_size = Vector2(0, 45)
 layout_mode = 2
 
 [node name="Title" type="Label" parent="MainVBox/TopBar"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 20
 text = "  ⚙️ GAME ENGINE PERSIAN GULF"
 vertical_alignment = 1
 
-[node name="Tabs" type="HBoxContainer" parent="MainVBox/TopBar"]
-layout_mode = 2
-alignment = 1
-
-[node name="BtnBuild" type="Button" parent="MainVBox/TopBar/Tabs"]
-layout_mode = 2
-text = "Build"
-flat = true
-
-[node name="BtnAssets" type="Button" parent="MainVBox/TopBar/Tabs"]
-layout_mode = 2
-text = "Assets"
-flat = true
-
-[node name="BtnSettings" type="Button" parent="MainVBox/TopBar/Tabs"]
-layout_mode = 2
-text = "Settings"
-flat = true
-
 [node name="PlayModeBtn" type="Button" parent="MainVBox/TopBar"]
 layout_mode = 2
-text = " حالت بازی "
+text = " تست و اجرای بازی (Play) "
 
 [node name="MainSplit" type="HSplitContainer" parent="MainVBox"]
 layout_mode = 2
 size_flags_vertical = 3
-split_offset = 250
+split_offset = 220
+dragger_visibility = 0
 
 [node name="LeftPanel" type="PanelContainer" parent="MainVBox/MainSplit"]
 layout_mode = 2
 
-[node name="AssetTree" type="Tree" parent="MainVBox/MainSplit/LeftPanel"]
+[node name="VBox" type="VBoxContainer" parent="MainVBox/MainSplit/LeftPanel"]
 layout_mode = 2
-script = ExtResource("2_tree")
+
+[node name="AssetTree" type="Tree" parent="MainVBox/MainSplit/LeftPanel/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="HSeparator" type="HSeparator" parent="MainVBox/MainSplit/LeftPanel/VBox"]
+layout_mode = 2
+
+[node name="BtnAddBox" type="Button" parent="MainVBox/MainSplit/LeftPanel/VBox"]
+layout_mode = 2
+text = "📦 افزودن باکس"
+
+[node name="BtnAddPlayer" type="Button" parent="MainVBox/MainSplit/LeftPanel/VBox"]
+layout_mode = 2
+text = "🏃 افزودن کاراکتر"
+
+[node name="BtnAddGround" type="Button" parent="MainVBox/MainSplit/LeftPanel/VBox"]
+layout_mode = 2
+text = "🟩 افزودن زمین"
+
+[node name="BtnSave" type="Button" parent="MainVBox/MainSplit/LeftPanel/VBox"]
+layout_mode = 2
+text = "💾 ذخیره پروژه"
 
 [node name="RightSplit" type="HSplitContainer" parent="MainVBox/MainSplit"]
 layout_mode = 2
-split_offset = 500
+split_offset = 550
+dragger_visibility = 0
 
 [node name="ViewportPanel" type="PanelContainer" parent="MainVBox/MainSplit/RightSplit"]
 layout_mode = 2
@@ -276,7 +343,7 @@ stretch = true
 
 [node name="SubViewport" type="SubViewport" parent="MainVBox/MainSplit/RightSplit/ViewportPanel/SubViewportContainer"]
 handle_input_locally = false
-size = Vector2i(500, 500)
+size = Vector2i(550, 600)
 render_target_update_mode = 4
 
 [node name="SceneRoot" type="Node2D" parent="MainVBox/MainSplit/RightSplit/ViewportPanel/SubViewportContainer/SubViewport"]
@@ -303,22 +370,15 @@ anchors_preset = 15
 }
 
 def build_project():
-    print("🚀 در حال ساخت ساختار موتور بازی‌ساز (Game Engine Persian Gulf)...")
+    print("🚀 در حال بازسازی موتور بازی‌ساز (Game Engine Persian Gulf)...")
     for file_path, content in project_files.items():
-        # جدا کردن نام پوشه از مسیر فایل
         directory = os.path.dirname(file_path)
-        
-        # اگر فایل داخل پوشه است، ابتدا پوشه را بساز
         if directory:
             os.makedirs(directory, exist_ok=True)
-            
-        # نوشتن محتوا داخل فایل
         with open(file_path, "w", encoding="utf-8") as f:
             f.write(content)
-            
-        print(f"✔️ فایل ایجاد شد: {file_path}")
-        
-    print("\n✅ پروژه با موفقیت ایجاد شد! حالا می‌توانید آن را در گودوت باز کنید.")
+        print(f"✔️ آپدیت شد: {file_path}")
+    print("\\n✅ پروژه با موفقیت به‌روزرسانی شد!")
 
 if __name__ == "__main__":
     build_project()
